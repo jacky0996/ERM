@@ -1,0 +1,5 @@
+﻿../../packages/@core/preferences/src/config.ts(28,5): error TS2322: Type '"zh-TW"' is not assignable to type 'SupportedLanguagesType'.
+../../packages/effects/layouts/src/widgets/language-toggle.vue(20,7): error TS2322: Type 'SupportedLanguagesType' is not assignable to type 'SupportedLanguagesType | undefined'.
+  Type '"zh-TW"' is not assignable to type 'SupportedLanguagesType | undefined'.
+../../packages/locales/src/i18n.ts(127,19): error TS2345: Argument of type 'SupportedLanguagesType' is not assignable to parameter of type 'Locale'.
+  Type '"zh-TW"' is not assignable to type 'Locale'.
