@@ -8,10 +8,18 @@ import { ElTag } from 'element-plus';
 interface RowType {
   id: string;
   name: string;
-  status: 'active' | 'inactive';
+  status: number;
   email: string;
   createTime: string;
 }
+
+/**
+ * 狀態對應表
+ */
+const STATUS_MAP = {
+  0: { label: '已禁用', type: 'danger' },
+  1: { label: '已啟用', type: 'success' },
+} as const;
 
 const formOptions: VbenFormProps = {
   collapsed: false,
@@ -30,8 +38,8 @@ const formOptions: VbenFormProps = {
       label: '狀態',
       componentProps: {
         options: [
-          { label: '已啟用', value: 'active' },
-          { label: '已禁用', value: 'inactive' },
+          { label: STATUS_MAP[1].label, value: 1 },
+          { label: STATUS_MAP[0].label, value: 0 },
         ],
         placeholder: '請選擇狀態',
       },
@@ -57,14 +65,17 @@ const gridOptions: VxeTableGridOptions<RowType> = {
       title: '狀態',
       slots: {
         default: ({ row }) => {
-          const type = row.status === 'active' ? 'success' : 'danger';
-          const text = row.status === 'active' ? '已啟用' : '已禁用';
-          return h(ElTag, { type }, { default: () => text });
+          const statusConfig = STATUS_MAP[row.status as keyof typeof STATUS_MAP] || STATUS_MAP[0];
+          return h(
+            ElTag,
+            { type: statusConfig.type },
+            { default: () => statusConfig.label },
+          );
         },
       },
     },
     { field: 'email', title: '信箱' },
-    { field: 'createTime', title: '註冊時間' },
+    { field: 'created_at', title: '註冊時間' },
   ],
   height: 'auto',
   keepSource: true,
@@ -72,11 +83,32 @@ const gridOptions: VxeTableGridOptions<RowType> = {
   proxyConfig: {
     ajax: {
       query: async ({ page }, formValues) => {
-        return await getMemberListApi({
+        const params = {
           page: page.currentPage,
-          pageSize: page.pageSize,
+          pageSize: page.pageSize, // 如果您的後端需要 per_page，請在此修改
           ...formValues,
-        });
+        };
+        console.log('發送請求參數:', params);
+        try {
+          const res = await getMemberListApi(params);
+          console.log('收到請求結果:', res);
+
+          // 獲取數據列表
+          const items = res.items ?? [];
+          // 獲取總筆數 (優先從 res.total 拿，如果沒有才拿 items 長度)
+          const total = res.total !== undefined ? res.total : items.length;
+
+          return {
+            items,
+            total,
+          };
+        } catch (error) {
+          console.error('API Call Failed:', error);
+          return {
+            items: [],
+            total: 0,
+          };
+        }
       },
     },
   },

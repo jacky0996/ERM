@@ -27,7 +27,7 @@ const defaultPreferences: Preferences = {
     layout: 'sidebar-nav',
     locale: 'zh-TW',
     loginExpiredMode: 'page',
-    name: 'Vben Admin',
+    name: import.meta.env.VITE_APP_TITLE,
     preferencesButtonPosition: 'auto',
     watermark: false,
     watermarkContent: '',
@@ -65,7 +65,7 @@ const defaultPreferences: Preferences = {
   logo: {
     enable: true,
     fit: 'contain',
-    source: 'https://unpkg.com/@vbenjs/static-source@0.1.7/source/logo-v1.webp',
+    source: '/hwacom-logo.png',
   },
   navigation: {
     accordion: true,
