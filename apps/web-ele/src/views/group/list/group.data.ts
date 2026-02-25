@@ -2,16 +2,20 @@ import type { VbenFormProps } from '#/adapter/form';
 import type { VxeTableGridOptions } from '#/adapter/vxe-table';
 
 import { h } from 'vue';
+import { router } from '#/router';
 
-import { ElTag } from 'element-plus';
+import { ElTag, ElLink } from 'element-plus';
+import { formatDateTime } from '#/utils/date';
 
 interface RowType {
-  id: string;
-  groupName: string;
-  memberCount: number;
-  activityTime: string;
+  id: number;
+  name: string;
+  note: string;
+  creator_id: number;
   status: number;
-  createdAt: string;
+  members: any[];
+  created_at: string;
+  updated_at: string;
 }
 
 /**
@@ -52,49 +56,9 @@ const formOptions: VbenFormProps = {
   submitOnEnter: true,
 };
 
-// 假資料
-const mockGroupData: RowType[] = [
-  {
-    id: '1',
-    groupName: '春節促銷活動-群組',
-    memberCount: 1250,
-    activityTime: '2026-02-01',
-    status: 1,
-    createdAt: '2026-01-15',
-  },
-  {
-    id: '2',
-    groupName: '會員回饋計畫-群組',
-    memberCount: 3500,
-    activityTime: '2026-03-10',
-    status: 1,
-    createdAt: '2026-01-20',
-  },
-  {
-    id: '3',
-    groupName: '新品上市通知-群組',
-    memberCount: 2100,
-    activityTime: '2026-02-28',
-    status: 1,
-    createdAt: '2026-01-25',
-  },
-  {
-    id: '4',
-    groupName: '季末清倉活動-群組',
-    memberCount: 890,
-    activityTime: '2026-03-31',
-    status: 1,
-    createdAt: '2026-02-01',
-  },
-  {
-    id: '5',
-    groupName: '舊活動群組-群組',
-    memberCount: 450,
-    activityTime: '2025-12-31',
-    status: 0,
-    createdAt: '2025-11-10',
-  },
-];
+
+
+import { getGroupListApi } from '#/api/group';
 
 const gridOptions: VxeTableGridOptions<RowType> = {
   checkboxConfig: {
@@ -102,16 +66,39 @@ const gridOptions: VxeTableGridOptions<RowType> = {
   },
   columns: [
     { title: '序號', type: 'seq', width: 60 },
-    { field: 'groupName', title: '群組名稱', minWidth: 150 },
     {
-      field: 'memberCount',
+      field: 'name',
+      title: '群組名稱',
+      minWidth: 150,
+      slots: {
+        default: ({ row }) => {
+          return h(
+            ElLink,
+            {
+              type: 'primary',
+              onClick: () => {
+                router.push(`/group/detail/${row.id}`);
+              },
+            },
+            { default: () => row.name },
+          );
+        },
+      },
+    },
+    {
+      field: 'members',
       title: '人數',
       width: 100,
       align: 'center',
+      slots: {
+        default: ({ row }) => {
+          return `${row.members?.length ?? 0}`;
+        },
+      },
     },
     {
-      field: 'activityTime',
-      title: '活動時間',
+      field: 'creator_id',
+      title: '建立者',
       minWidth: 120,
     },
     {
@@ -130,24 +117,44 @@ const gridOptions: VxeTableGridOptions<RowType> = {
         },
       },
     },
-    { field: 'createdAt', title: '建立時間', minWidth: 120 },
+    {
+      field: 'created_at',
+      title: '建立時間',
+      minWidth: 160,
+      slots: {
+        default: ({ row }) => {
+          return formatDateTime(row.created_at);
+        },
+      },
+    },
   ],
   height: 'auto',
   keepSource: true,
   pagerConfig: {},
   proxyConfig: {
     ajax: {
-      query: async ({ page }) => {
-        // 暫時使用假資料，後續替換為真實 API
-        const startIndex = (page.currentPage - 1) * page.pageSize;
-        const endIndex = startIndex + page.pageSize;
-        const items = mockGroupData.slice(startIndex, endIndex);
-        const total = mockGroupData.length;
-
-        return {
-          items,
-          total,
+      query: async ({ page }, formValues) => {
+        const params = {
+          page: page.currentPage,
+          pageSize: page.pageSize,
+          ...formValues,
         };
+        try {
+          const res = await getGroupListApi(params);
+          const items = res.items ?? [];
+          const total = res.total !== undefined ? res.total : items.length;
+
+          return {
+            items,
+            total,
+          };
+        } catch (error) {
+          console.error('API Call Failed:', error);
+          return {
+            items: [],
+            total: 0,
+          };
+        }
       },
     },
   },

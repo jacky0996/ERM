@@ -2,15 +2,18 @@ import type { VbenFormProps } from '#/adapter/form';
 import type { VxeTableGridOptions } from '#/adapter/vxe-table';
 
 import { h } from 'vue';
+import { router } from '#/router';
 
-import { ElTag } from 'element-plus';
+import { ElTag, ElLink } from 'element-plus';
+import { getMemberListApi } from '#/api/member';
 
 interface RowType {
   id: string;
   name: string;
   status: number;
   emails: { email: string }[];
-  createTime: string;
+  created_at: string;
+  updated_at: string;
 }
 
 /**
@@ -51,7 +54,6 @@ const formOptions: VbenFormProps = {
   submitOnEnter: true,
 };
 
-import { getMemberListApi } from '#/api/member';
 
 const gridOptions: VxeTableGridOptions<RowType> = {
   checkboxConfig: {
@@ -59,7 +61,24 @@ const gridOptions: VxeTableGridOptions<RowType> = {
   },
   columns: [
     { title: '序號', type: 'seq', width: 60 },
-    { field: 'name', title: '姓名' },
+    {
+      field: 'name',
+      title: '姓名',
+      slots: {
+        default: ({ row }) => {
+          return h(
+            ElLink,
+            {
+              type: 'primary',
+              onClick: () => {
+                router.push(`/member/detail/${row.id}`);
+              },
+            },
+            { default: () => row.name },
+          );
+        },
+      },
+    },
     {
       field: 'status',
       title: '狀態',
@@ -83,7 +102,15 @@ const gridOptions: VxeTableGridOptions<RowType> = {
         },
       },
     },
-    { field: 'created_at', title: '註冊時間' },
+    { 
+      field: 'created_at', 
+      title: '註冊時間', 
+      slots: {
+        default: ({ row }) => {
+          return (row.created_at ? row.created_at.replace('T', ' ').split('.')[0] : '') as string;
+        },
+      },
+    },
   ],
   height: 'auto',
   keepSource: true,

@@ -15,7 +15,7 @@ const [Grid, gridApi] = useVbenVxeGrid({ formOptions, gridOptions });
 
 const [ImportVbenModal, importModalApi] = useVbenModal({
   connectedComponent: ExcelImportModal,
-  class: 'w-[1000px]', // 設置更大尺寸
+  class: 'w-[1000px]',
 });
 
 function handleImport() {

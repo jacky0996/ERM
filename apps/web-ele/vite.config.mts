@@ -13,9 +13,9 @@ export default defineConfig(async () => {
       ],
       server: {
         proxy: {
-          '/api/ehr': {
+          '/api/edm': {
             changeOrigin: true,
-            rewrite: (path) => path.replace(/^\/api\/ehr/, '/api/ehr'),
+            rewrite: (path) => path.replace(/^\/api\/edm/, '/api/edm'),
             target: 'http://127.0.0.1:8000',
             ws: true,
           },

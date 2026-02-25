@@ -1,0 +1,73 @@
+/* 人員詳情頁面樣式 */
+.detail-card {
+  margin-bottom: 20px;
+}
+
+.detail-section-title {
+  font-weight: bold;
+  margin-bottom: 12px;
+  display: block;
+  font-size: 16px;
+  color: var(--el-text-color-primary);
+}
+
+.detail-item-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.detail-info-item {
+  margin-bottom: 6px;
+}
+
+.primary-email-tag {
+  margin-left: 8px;
+}
+
+.empty-data-text {
+  color: var(--el-text-color-secondary);
+  text-align: center;
+  padding: 20px 0;
+}
+
+/* 表格佈局容器 */
+.detail-table-container {
+  width: 100%;
+  overflow-x: auto;
+  border: 1px solid var(--el-border-color-lighter);
+  border-radius: 4px;
+}
+
+.custom-detail-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+  background-color: var(--el-bg-color);
+  min-width: max-content;
+}
+
+.custom-detail-table th {
+  background-color: var(--el-fill-color-light);
+  color: var(--el-text-color-secondary);
+  font-weight: 600;
+  text-align: left;
+  padding: 10px 12px;
+  border-bottom: 2px solid var(--el-border-color-light);
+  white-space: nowrap;
+}
+
+.custom-detail-table td {
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--el-border-color-lighter);
+  color: var(--el-text-color-primary);
+  white-space: nowrap;
+}
+
+.custom-detail-table tr:hover {
+  background-color: var(--el-fill-color-hover);
+}
+
+.custom-detail-table tr:last-child td {
+  border-bottom: none;
+}

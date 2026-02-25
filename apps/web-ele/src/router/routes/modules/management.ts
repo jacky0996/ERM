@@ -11,9 +11,11 @@ const routes: RouteRecordRaw[] = [
       order: 20,
       title: '群組管理',
       authority: ['super', 'admin', 'group_read'],
+      hideChildrenInMenu: true,
     },
     name: 'GroupManagementSingle',
     path: '/group',
+    redirect: '/group/list',
     children: [
       {
         name: 'GroupList',
@@ -21,6 +23,15 @@ const routes: RouteRecordRaw[] = [
         component: () => import('#/views/group/list/index.vue'),
         meta: {
           title: '群組管理',
+        },
+      },
+      {
+        name: 'GroupDetail',
+        path: 'detail/:id',
+        component: () => import('#/views/group/list/index.vue'),
+        meta: {
+          hideInMenu: true,
+          title: '群組詳情',
         },
       },
     ],
@@ -34,9 +45,11 @@ const routes: RouteRecordRaw[] = [
       order: 30,
       title: '人員管理',
       authority: ['super', 'admin', 'member_read'],
+      hideChildrenInMenu: true,
     },
     name: 'MemberManagementSingle',
     path: '/member',
+    redirect: '/member/list',
     children: [
       {
         name: 'MemberList',
@@ -44,6 +57,15 @@ const routes: RouteRecordRaw[] = [
         component: () => import('#/views/member/index.vue'),
         meta: {
           title: '人員管理',
+        },
+      },
+      {
+        name: 'MemberDetail',
+        path: 'detail/:id',
+        component: () => import('#/views/member/detail.vue'),
+        meta: {
+          hideInMenu: true,
+          title: '人員詳情',
         },
       },
     ],
