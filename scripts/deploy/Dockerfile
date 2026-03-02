@@ -16,12 +16,12 @@ COPY . /app
 # 跳過 Playwright 瀏覽器下載 (大幅縮減安裝體積與時間)
 ENV PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1
 
-# 安裝依賴 (增加逾時、重試與詳細日誌協助排錯)
+# 安裝依賴 (增加逾時、重試，並嘗試切換至官方 Registry 以排查鏡像站問題)
 RUN --mount=type=cache,id=pnpm,target=/pnpm/store \
     pnpm config set fetch-retries 5 && \
     pnpm config set fetch-retry-mintimeout 20000 && \
     pnpm config set fetch-retry-maxtimeout 120000 && \
-    pnpm install --no-frozen-lockfile --reporter=append-only
+    pnpm install --no-frozen-lockfile --reporter=append-only --registry=https://registry.npmjs.org
 # 編譯 web-ele 模組
 RUN pnpm run build:ele
 
