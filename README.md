@@ -76,14 +76,24 @@ pnpm build:ele
 
 系統支持使用 Docker 進行容器化部署，配置已針對 `web-ele` 模組進行優化。
 
-### 1. 本地構建映像檔
-```bash
-docker build -t edm-image .
-```
+### 1. 多環境構建映像檔
+
+系統支援透過 `--build-arg APP_ENV` 參數來決定編譯目標環境（會自動讀取對應的 `.env.[env]` 檔案）：
+
+*   **構建 UAT 測試環境**：
+    ```bash
+    docker build --build-arg APP_ENV=uat -t edm-image-uat .
+    ```
+*   **構建正式生產環境 (預設)**：
+    ```bash
+    docker build -t edm-image-prod .
+    ```
 
 ### 2. 使用 Docker Compose 啟動
-如果您已安裝 Docker Compose，可以使用以下指令一鍵啟動：
+
+啟動對應環境的容器：
 ```bash
+# 啟動 UAT 容器 (需確保 docker-compose.yml 中的 image 名稱正確)
 docker-compose up -d
 ```
 啟動後，系統將運行在 `http://localhost` (80 Port)。

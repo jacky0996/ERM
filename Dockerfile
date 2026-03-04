@@ -16,14 +16,23 @@ COPY . /app
 # 跳過 Playwright 瀏覽器下載 (大幅縮減安裝體積與時間)
 ENV PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1
 
+# 定義構建環境參數 (預設為 production, 可在 build 時透過 --build-arg APP_ENV=uat 覆蓋)
+ARG APP_ENV=production
+ENV VITE_APP_ENV=${APP_ENV}
+
 # 安裝依賴 (增加逾時、重試，並嘗試切換至官方 Registry 以排查鏡像站問題)
 RUN --mount=type=cache,id=pnpm,target=/pnpm/store \
     pnpm config set fetch-retries 5 && \
     pnpm config set fetch-retry-mintimeout 20000 && \
     pnpm config set fetch-retry-maxtimeout 120000 && \
     pnpm install --no-frozen-lockfile --reporter=append-only --registry=https://registry.npmjs.org
-# 編譯 web-ele 模組
-RUN pnpm run build:ele
+
+# 編譯 web-ele 模組 (根據 APP_ENV 決定使用的編譯腳本)
+RUN if [ "$VITE_APP_ENV" = "uat" ]; then \
+      pnpm run build:ele --filter=@vben/web-ele -- --mode uat; \
+    else \
+      pnpm run build:ele; \
+    fi
 
 RUN echo "Builder Success 🎉"
 
