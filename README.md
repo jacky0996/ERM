@@ -82,11 +82,11 @@ pnpm build:ele
 
 *   **構建 UAT 測試環境**：
     ```bash
-    docker build --build-arg APP_ENV=uat -t edm-image-uat .
+    docker build --build-arg APP_ENV=uat -t edm-image .
     ```
 *   **構建正式生產環境 (預設)**：
     ```bash
-    docker build -t edm-image-prod .
+    docker build -t edm-image .
     ```
 
 ### 2. 使用 Docker Compose 啟動
