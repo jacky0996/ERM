@@ -90,14 +90,12 @@ export const useAuthStore = defineStore('auth', () => {
    */
   async function ssoLogin(token: string) {
     const maxRetries = 10;
-    const retryInterval = 5 * 60 * 1000; // 5 分鐘 (依照使用者排障需求設定)
+    const retryInterval = 1000; // 已完成排障，改回 1 秒 (或更高，視伺服器反應時間而定)
     let retryCount = 0;
 
     while (retryCount < maxRetries) {
       try {
         loginLoading.value = true;
-        console.log(`[SSO] 正在執行第 ${retryCount + 1} 次驗證嘗試...`);
-
         const { accessToken, userInfo } = await verifySsoTokenApi(token);
 
         if (accessToken) {
@@ -109,23 +107,18 @@ export const useAuthStore = defineStore('auth', () => {
           // 紀錄最後活動時間 (Session 續期用)
           localStorage.setItem('edm_last_activity', Date.now().toString());
 
-          // 獲取權限碼
-          const accessCodes = await getAccessCodesApi();
-          accessStore.setAccessCodes(accessCodes);
+          // ⚠️ 暫時不呼叫權限碼 API，直接進入系統
+          // const accessCodes = await getAccessCodesApi();
+          // accessStore.setAccessCodes(accessCodes);
 
           console.log('[SSO] 驗證成功，進入系統。');
           return true;
         }
       } catch (error: any) {
         retryCount++;
-        console.error(`[SSO] 第 ${retryCount} 次驗證失敗:`, error);
+        console.error(`[SSO] 驗證失敗 (嘗試 ${retryCount}):`, error);
 
         if (retryCount < maxRetries) {
-          const nextRetryMin = retryInterval / 60000;
-          console.warn(
-            `[SSO] 為了方便您排障，系統將在 ${nextRetryMin} 分鐘後進行下次重試。請在此期間檢查 F12 Network 與 API 格式。`,
-          );
-          // 使用簡單的 Promise 進行等待
           await new Promise((resolve) => setTimeout(resolve, retryInterval));
         }
       } finally {
