@@ -37,7 +37,8 @@ public function redirectToEdm() {
     Cache::put("sso_token_{$ssoToken}", Auth::id(), 60);
 
     $edmUrl = config('app.edm_url'); // e.g., https://uatedm.hwacom.com
-    return redirect("{$edmUrl}/#/?token={$ssoToken}");
+    // ✅ History 模式：直接在直路徑後加參數，不需 /#/
+    return redirect("{$edmUrl}/?token={$ssoToken}");
 }
 ```
 
