@@ -45,9 +45,9 @@ export type FormFieldOptions = Partial<
 >;
 
 export interface FormShape {
-  /** 默认值 */
+  /** 預設值 */
   default?: any;
-  /** 字段名 */
+  /** 欄位名稱 */
   fieldName: string;
   /** 是否必填 */
   required?: boolean;
@@ -91,8 +91,8 @@ type FormItemDependenciesConditionWithProps = (
 
 export interface FormItemDependencies {
   /**
-   * 组件参数
-   * @returns 组件参数
+   * 組件參數
+   * @returns 組件參數
    */
   componentProps?: FormItemDependenciesConditionWithProps;
   /**
@@ -101,7 +101,7 @@ export interface FormItemDependencies {
    */
   disabled?: boolean | FormItemDependenciesCondition;
   /**
-   * 是否渲染（删除dom）
+   * 是否渲染（刪除 DOM）
    * @returns 是否渲染
    */
   if?: boolean | FormItemDependenciesCondition;
@@ -111,20 +111,20 @@ export interface FormItemDependencies {
    */
   required?: FormItemDependenciesCondition;
   /**
-   * 字段规则
+   * 欄位規則
    */
   rules?: FormItemDependenciesConditionWithRules;
   /**
-   * 是否隐藏(Css)
-   * @returns 是否隐藏
+   * 是否隱藏 (CSS)
+   * @returns 是否隱藏
    */
   show?: boolean | FormItemDependenciesCondition;
   /**
-   * 任意触发都会执行
+   * 任意觸發都會執行
    */
   trigger?: FormItemDependenciesCondition<void>;
   /**
-   * 触发字段
+   * 觸發欄位
    */
   triggerFields: string[];
 }
@@ -138,72 +138,72 @@ type ComponentProps =
 
 export interface FormCommonConfig {
   /**
-   * 在Label后显示一个冒号
+   * 在 Label 後顯示一個冒號
    */
   colon?: boolean;
   /**
-   * 所有表单项的props
+   * 所有表單項的 props
    */
   componentProps?: ComponentProps;
   /**
-   * 所有表单项的控件样式
+   * 所有表單項的控制項樣式
    */
   controlClass?: string;
   /**
-   * 所有表单项的禁用状态
+   * 所有表單項的禁用狀態
    * @default false
    */
   disabled?: boolean;
   /**
-   * 是否禁用所有表单项的change事件监听
+   * 是否禁用所有表單項的 change 事件監聽
    * @default true
    */
   disabledOnChangeListener?: boolean;
   /**
-   * 是否禁用所有表单项的input事件监听
+   * 是否禁用所有表單項的 input 事件監聽
    * @default true
    */
   disabledOnInputListener?: boolean;
   /**
-   * 所有表单项的空状态值,默认都是undefined，naive-ui的空状态值是null
+   * 所有表單項的空狀態值,預設都是 undefined，naive-ui 的空狀態值是 null
    */
   emptyStateValue?: null | undefined;
   /**
-   * 所有表单项的控件样式
+   * 所有表單項的控制項樣式
    * @default {}
    */
   formFieldProps?: FormFieldOptions;
   /**
-   * 所有表单项的栅格布局，支持函数形式
+   * 所有表單項的網格佈局，支援函式形式
    * @default ""
    */
   formItemClass?: (() => string) | string;
   /**
-   * 隐藏所有表单项label
+   * 隱藏所有表單項 label
    * @default false
    */
   hideLabel?: boolean;
   /**
-   * 是否隐藏必填标记
+   * 是否隱藏必填標記
    * @default false
    */
   hideRequiredMark?: boolean;
   /**
-   * 所有表单项的label样式
+   * 所有表單項的 label 樣式
    * @default ""
    */
   labelClass?: string;
   /**
-   * 所有表单项的label宽度
+   * 所有表單項的 label 寬度
    */
   labelWidth?: number;
   /**
-   * 所有表单项的model属性名
+   * 所有表單項的 model 屬性名
    * @default "modelValue"
    */
   modelPropName?: string;
   /**
-   * 所有表单项的wrapper样式
+   * 所有表單項的 wrapper 樣式
    */
   wrapperClass?: string;
 }
@@ -230,40 +230,40 @@ export type FieldMappingTime = [
     | null
     | string
   )?,
-][];
+ ][];
 
 export type ArrayToStringFields = Array<
-  | [string[], string?] // 嵌套数组格式，可选分隔符
-  | string // 单个字段，使用默认分隔符
-  | string[] // 简单数组格式，最后一个元素可以是分隔符
+  | [string[], string?] // 嵌套陣列格式，可選分隔符
+  | string // 單個欄位，使用預設分隔符
+  | string[] // 簡單陣列格式，最後一個元素可以是分隔符
 >;
 
 export interface FormSchema<
   T extends BaseFormComponentType = BaseFormComponentType,
 > extends FormCommonConfig {
-  /** 组件 */
+  /** 組件 */
   component: Component | T;
-  /** 组件参数 */
+  /** 組件參數 */
   componentProps?: ComponentProps;
-  /** 默认值 */
+  /** 預設值 */
   defaultValue?: any;
-  /** 依赖 */
+  /** 相依性 */
   dependencies?: FormItemDependencies;
   /** 描述 */
   description?: CustomRenderType;
-  /** 字段名 */
+  /** 欄位名稱 */
   fieldName: string;
-  /** 帮助信息 */
+  /** 幫助資訊 */
   help?: CustomRenderType;
-  /** 是否隐藏表单项 */
+  /** 是否隱藏表單項 */
   hide?: boolean;
-  /** 表单项 */
+  /** 表單項 */
   label?: CustomRenderType;
-  // 自定义组件内部渲染
+  // 自定義組件內部渲染
   renderComponentContent?: RenderComponentContentType;
-  /** 字段规则 */
+  /** 欄位規則 */
   rules?: FormSchemaRuleType;
-  /** 后缀 */
+  /** 後綴 */
   suffix?: CustomRenderType;
 }
 
@@ -275,59 +275,59 @@ export interface FormRenderProps<
   T extends BaseFormComponentType = BaseFormComponentType,
 > {
   /**
-   * 表单字段数组映射字符串配置 默认使用","
+   * 表單欄位陣列映射字串設定 預設使用 ","
    */
   arrayToStringFields?: ArrayToStringFields;
   /**
-   * 是否折叠，在showCollapseButton=true下生效
-   * true:折叠 false:展开
+   * 是否折疊，在 showCollapseButton=true 下生效
+   * true:折疊 false:展開
    */
   collapsed?: boolean;
   /**
-   * 折叠时保持行数
+   * 折疊時保持行數
    * @default 1
    */
   collapsedRows?: number;
   /**
-   * 是否触发resize事件
+   * 是否觸發 resize 事件
    * @default false
    */
   collapseTriggerResize?: boolean;
   /**
-   * 表单项通用后备配置，当子项目没配置时使用这里的配置，子项目配置优先级高于此配置
+   * 表單項通用後備設定，當子專案沒設定時使用這裡的設定，子專案設定優先級高於此設定
    */
   commonConfig?: FormCommonConfig;
   /**
-   * 紧凑模式（移除表单每一项底部为校验信息预留的空间）
+   * 緊湊模式（移除表單每一項底部為校驗資訊預留的空間）
    */
   compact?: boolean;
   /**
-   * 组件v-model事件绑定
+   * 組件 v-model 事件綁定
    */
   componentBindEventMap?: Partial<Record<BaseFormComponentType, string>>;
   /**
-   * 组件集合
+   * 組件集合
    */
   componentMap: Record<BaseFormComponentType, Component>;
   /**
-   * 表单字段映射到时间格式
+   * 表單欄位映射到時間格式
    */
   fieldMappingTime?: FieldMappingTime;
   /**
-   * 表单实例
+   * 表單實例
    */
   form?: FormContext<GenericObject>;
   /**
-   * 表单项布局
+   * 表單項佈局
    */
   layout?: FormLayout;
   /**
-   * 表单定义
+   * 表單定義
    */
   schema?: FormSchema<T>[];
 
   /**
-   * 是否显示展开/折叠
+   * 是否顯示展開/折疊
    */
   showCollapseButton?: boolean;
   /**
@@ -335,7 +335,7 @@ export interface FormRenderProps<
    */
 
   /**
-   * 表单栅格布局
+   * 表單網格佈局
    * @default "grid-cols-1"
    */
   wrapperClass?: WrapperClassType;
@@ -349,85 +349,85 @@ export interface ActionButtonOptions extends VbenButtonProps {
 
 export interface VbenFormProps<
   T extends BaseFormComponentType = BaseFormComponentType,
-> extends Omit<
+ > extends Omit<
   FormRenderProps<T>,
   'componentBindEventMap' | 'componentMap' | 'form'
 > {
   /**
-   * 操作按钮是否反转（提交按钮前置）
+   * 操作按鈕是否反省（提交按鈕前置）
    */
   actionButtonsReverse?: boolean;
   /**
-   * 操作按钮组的样式
-   * newLine: 在新行显示。rowEnd: 在行内显示，靠右对齐（默认）。inline: 使用grid默认样式
+   * 操作按鈕組的樣式
+   * newLine: 在新行顯示。rowEnd: 在行內顯示，靠右對齊（預設）。inline: 使用 grid 預設樣式
    */
   actionLayout?: 'inline' | 'newLine' | 'rowEnd';
   /**
-   * 操作按钮组显示位置，默认靠右显示
+   * 操作按鈕組顯示位置，預設靠右顯示
    */
   actionPosition?: 'center' | 'left' | 'right';
   /**
-   * 表单操作区域class
+   * 表單操作區域 class
    */
   actionWrapperClass?: ClassType;
   /**
-   * 表单字段数组映射字符串配置 默认使用","
+   * 表單欄位陣列映射字串設定 預設使用 ","
    */
   arrayToStringFields?: ArrayToStringFields;
 
   /**
-   * 表单字段映射
+   * 表單欄位映射
    */
   fieldMappingTime?: FieldMappingTime;
   /**
-   * 表单收起展开状态变化回调
+   * 表單收起展開狀態變化回調
    */
   handleCollapsedChange?: (collapsed: boolean) => void;
   /**
-   * 表单重置回调
+   * 表單重置回調
    */
   handleReset?: HandleResetFn;
   /**
-   * 表单提交回调
+   * 表單提交回調
    */
   handleSubmit?: HandleSubmitFn;
   /**
-   * 表单值变化回调
+   * 表單值變化回調
    */
   handleValuesChange?: (
     values: Record<string, any>,
     fieldsChanged: string[],
   ) => void;
   /**
-   * 重置按钮参数
+   * 重置按鈕參數
    */
   resetButtonOptions?: ActionButtonOptions;
 
   /**
-   * 验证失败时是否自动滚动到第一个错误字段
+   * 驗證失敗時是否自動捲動到第一個錯誤欄位
    * @default false
    */
   scrollToFirstError?: boolean;
 
   /**
-   * 是否显示默认操作按钮
+   * 是否顯示預設操作按鈕
    * @default true
    */
   showDefaultActions?: boolean;
 
   /**
-   * 提交按钮参数
+   * 提交按鈕參數
    */
   submitButtonOptions?: ActionButtonOptions;
 
   /**
-   * 是否在字段值改变时提交表单
+   * 是否在欄位值改變時提交表單
    * @default false
    */
   submitOnChange?: boolean;
 
   /**
-   * 是否在回车时提交表单
+   * 是否在回車時提交表單
    * @default false
    */
   submitOnEnter?: boolean;

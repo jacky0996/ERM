@@ -49,6 +49,19 @@ async function bootstrap(namespace: string) {
   // 配置 pinia-tore
   await initStores(app, { namespace });
 
+  // SSO 閒置檢查定時器 (30 分鐘未活動則自動登出)
+  const authStore = (await import('#/store')).useAuthStore();
+  setInterval(() => {
+    const lastActivity = parseInt(localStorage.getItem('edm_last_activity') || '0');
+    if (!lastActivity) return;
+    const now = Date.now();
+    const idleTimeout = 30 * 60 * 1000; // 30 分鐘
+
+    if (now - lastActivity > idleTimeout) {
+      authStore.logout();
+    }
+  }, 60000); // 每分鐘檢查一次
+
   // 安装权限指令
   registerAccessDirective(app);
 

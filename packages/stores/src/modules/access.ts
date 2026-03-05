@@ -8,45 +8,45 @@ type AccessToken = null | string;
 
 interface AccessState {
   /**
-   * 权限码
+   * 權限碼
    */
   accessCodes: string[];
   /**
-   * 可访问的菜单列表
+   * 可存取的選單列表
    */
   accessMenus: MenuRecordRaw[];
   /**
-   * 可访问的路由列表
+   * 可存取的路由列表
    */
   accessRoutes: RouteRecordRaw[];
   /**
-   * 登录 accessToken
+   * 登入 accessToken
    */
   accessToken: AccessToken;
   /**
-   * 是否已经检查过权限
+   * 是否已經檢查過權限
    */
   isAccessChecked: boolean;
   /**
-   * 是否锁屏状态
+   * 是否為鎖屏狀態
    */
   isLockScreen: boolean;
   /**
-   * 锁屏密码
+   * 鎖屏密碼
    */
   lockScreenPassword?: string;
   /**
-   * 登录是否过期
+   * 登入是否過期
    */
   loginExpired: boolean;
   /**
-   * 登录 accessToken
+   * 登入 accessToken
    */
   refreshToken: AccessToken;
 }
 
 /**
- * @zh_CN 访问权限相关
+ * @zh_CN 存取權限相關
  */
 export const useAccessStore = defineStore('core-access', {
   actions: {
@@ -122,7 +122,7 @@ export const useAccessStore = defineStore('core-access', {
   }),
 });
 
-// 解决热更新问题
+// 解決熱更新問題
 const hot = import.meta.hot;
 if (hot) {
   hot.accept(acceptHMRUpdate(useAccessStore, hot));

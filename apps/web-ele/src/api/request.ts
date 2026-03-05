@@ -67,6 +67,10 @@ function createRequestClient(baseURL: string, options?: RequestClientOptions) {
 
       config.headers.Authorization = formatToken(accessStore.accessToken);
       config.headers['Accept-Language'] = preferences.app.locale;
+
+      // 每次發送請求時同步更新最後活動時間 (Session 續期)
+      localStorage.setItem('edm_last_activity', Date.now().toString());
+
       return config;
     },
   });

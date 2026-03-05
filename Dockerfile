@@ -1,9 +1,7 @@
 FROM node:22-slim AS builder
 
-# --max-old-space-size
 ENV PNPM_HOME="/pnpm"
 ENV PATH="$PNPM_HOME:$PATH"
-ENV NODE_OPTIONS=--max-old-space-size=4096
 ENV TZ=Asia/Taipei
 
 RUN npm i -g corepack
@@ -27,12 +25,8 @@ RUN --mount=type=cache,id=pnpm,target=/pnpm/store \
     pnpm config set fetch-retry-maxtimeout 120000 && \
     pnpm install --no-frozen-lockfile --reporter=append-only --registry=https://registry.npmjs.org
 
-# 編譯 web-ele 模組 (根據 APP_ENV 決定使用的編譯腳本)
-RUN if [ "$VITE_APP_ENV" = "uat" ]; then \
-      pnpm run build:ele --filter=@vben/web-ele -- --mode uat; \
-    else \
-      pnpm run build:ele; \
-    fi
+# 編譯 web-ele 模組 (利用 turbo 構建並透傳模式參數)
+RUN pnpm run build:ele -- --mode ${VITE_APP_ENV}
 
 RUN echo "Builder Success 🎉"
 

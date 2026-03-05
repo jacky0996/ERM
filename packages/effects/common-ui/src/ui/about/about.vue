@@ -21,9 +21,9 @@ defineOptions({
 
 withDefaults(defineProps<Props>(), {
   description:
-    '是一个现代化开箱即用的中后台解决方案，采用最新的技术栈，包括 Vue 3.0、Vite、TailwindCSS 和 TypeScript 等前沿技术，代码规范严谨，提供丰富的配置选项，旨在为中大型项目的开发提供现成的开箱即用解决方案及丰富的示例，同时，它也是学习和深入前端技术的一个极佳示例。',
+    '是一個現代化開箱即用的中後台解決方案，採用最新的技術棧，包括 Vue 3.0、Vite、TailwindCSS 和 TypeScript 等前沿技術，程式碼規範嚴謹，提供豐富的設定選項，旨在為中大型專案的開發提供現成的開箱即用解決方案及豐富的範例，同時，它也是學習和深入前端技術的一個極佳範例。',
   name: 'Vben Admin',
-  title: '关于项目',
+  title: '關於專案',
 });
 
 declare global {
@@ -59,36 +59,36 @@ const {
   homepage,
   license,
   version,
-  // vite inject-metadata 插件注入的全局变量
+  // vite inject-metadata 插件注入的全域變數
 } = __VBEN_ADMIN_METADATA__ || {};
 
 const vbenDescriptionItems: DescriptionItem[] = [
   {
     content: version,
-    title: '版本号',
+    title: '版本號',
   },
   {
     content: license,
-    title: '开源许可协议',
+    title: '開源許可協議',
   },
   {
     content: buildTime,
-    title: '最后构建时间',
+    title: '最後建置時間',
   },
   {
-    content: renderLink(homepage, '点击查看'),
-    title: '主页',
+    content: renderLink(homepage, '點擊查看'),
+    title: '首頁',
   },
   {
-    content: renderLink(VBEN_DOC_URL, '点击查看'),
-    title: '文档地址',
+    content: renderLink(VBEN_DOC_URL, '點擊查看'),
+    title: '文件位址',
   },
   {
-    content: renderLink(VBEN_PREVIEW_URL, '点击查看'),
-    title: '预览地址',
+    content: renderLink(VBEN_PREVIEW_URL, '點擊查看'),
+    title: '預覽位址',
   },
   {
-    content: renderLink(VBEN_GITHUB_URL, '点击查看'),
+    content: renderLink(VBEN_GITHUB_URL, '點擊查看'),
     title: 'Github',
   },
   {
@@ -123,7 +123,7 @@ const devDependenciesItems = Object.keys(devDependencies).map((key) => ({
     </template>
     <div class="card-box p-5">
       <div>
-        <h5 class="text-foreground text-lg">基本信息</h5>
+        <h5 class="text-foreground text-lg">基本資訊</h5>
       </div>
       <div class="mt-4">
         <dl class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
@@ -143,7 +143,7 @@ const devDependenciesItems = Object.keys(devDependencies).map((key) => ({
 
     <div class="card-box mt-6 p-5">
       <div>
-        <h5 class="text-foreground text-lg">生产环境依赖</h5>
+        <h5 class="text-foreground text-lg">生產環境相依性</h5>
       </div>
       <div class="mt-4">
         <dl class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
@@ -162,7 +162,7 @@ const devDependenciesItems = Object.keys(devDependencies).map((key) => ({
     </div>
     <div class="card-box mt-6 p-5">
       <div>
-        <h5 class="text-foreground text-lg">开发环境依赖</h5>
+        <h5 class="text-foreground text-lg">開發環境相依性</h5>
       </div>
       <div class="mt-4">
         <dl class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4">

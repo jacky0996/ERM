@@ -11,11 +11,11 @@ export const defaultResponseInterceptor = ({
   dataField = 'data',
   successCode = 0,
 }: {
-  /** 响应数据中代表访问结果的字段名 */
+  /** 回應資料中代表存取結果的欄位名稱 */
   codeField: string;
-  /** 响应数据中装载实际数据的字段名，或者提供一个函数从响应数据中解析需要返回的数据 */
+  /** 回應資料中裝載實際資料的欄位名稱，或者提供一個函式從回應資料中解析需要回傳的資料 */
   dataField: ((response: any) => any) | string;
-  /** 当codeField所指定的字段值与successCode相同时，代表接口访问成功。如果提供一个函数，则返回true代表接口访问成功 */
+  /** 當 codeField 所指定的欄位值與 successCode 相同時，代表介面存取成功。如果提供一個函式，則回傳 true 代表介面存取成功 */
   successCode: ((code: any) => boolean) | number | string;
 }): ResponseInterceptorConfig => {
   return {
@@ -60,17 +60,17 @@ export const authenticateResponseInterceptor = ({
   return {
     rejected: async (error) => {
       const { config, response } = error;
-      // 如果不是 401 错误，直接抛出异常
+      // 如果不是 401 錯誤，直接拋出異常
       if (response?.status !== 401) {
         throw error;
       }
-      // 判断是否启用了 refreshToken 功能
-      // 如果没有启用或者已经是重试请求了，直接跳转到重新登录
+      // 判斷是否啟用了 refreshToken 功能
+      // 如果沒有啟用或者是重試請求，直接跳轉到重新登入
       if (!enableRefreshToken || config.__isRetryRequest) {
         await doReAuthenticate();
         throw error;
       }
-      // 如果正在刷新 token，则将请求加入队列，等待刷新完成
+      // 如果正在重新整理 token，則將請求加入佇列，等待重新整理完成
       if (client.isRefreshing) {
         return new Promise((resolve) => {
           client.refreshTokenQueue.push((newToken: string) => {
@@ -80,22 +80,22 @@ export const authenticateResponseInterceptor = ({
         });
       }
 
-      // 标记开始刷新 token
+      // 標記開始重新整理 token
       client.isRefreshing = true;
-      // 标记当前请求为重试请求，避免无限循环
+      // 標記當前請求為重試請求，避免無限循環
       config.__isRetryRequest = true;
 
       try {
         const newToken = await doRefreshToken();
 
-        // 处理队列中的请求
+        // 處理佇列中的請求
         client.refreshTokenQueue.forEach((callback) => callback(newToken));
-        // 清空队列
+        // 清空佇列
         client.refreshTokenQueue = [];
 
         return client.request(error.config.url, { ...error.config });
       } catch (refreshError) {
-        // 如果刷新 token 失败，处理错误（如强制登出或跳转登录页面）
+        // 如果重新整理 token 失敗，處理錯誤（如強制登出或跳轉登入頁面）
         client.refreshTokenQueue.forEach((callback) => callback(''));
         client.refreshTokenQueue = [];
         console.error('Refresh token failed, please login again.');

@@ -16,6 +16,12 @@ export namespace AuthApi {
     data: string;
     status: number;
   }
+
+  /** SSO 驗證結果 */
+  export interface SsoResult {
+    accessToken: string;
+    userInfo: any;
+  }
 }
 
 /**
@@ -48,4 +54,11 @@ export async function logoutApi() {
  */
 export async function getAccessCodesApi() {
   return requestClient.get<string[]>('/auth/codes');
+}
+
+/**
+ * 驗證 SSO Token
+ */
+export async function verifySsoTokenApi(token: string) {
+  return requestClient.post<AuthApi.SsoResult>('/sso/verify-token', { token });
 }

@@ -1,13 +1,19 @@
 import { defineOverridesPreferences } from '@vben/preferences';
 
 /**
- * @description 项目配置文件
- * 只需要覆盖项目中的一部分配置，不需要的配置不用覆盖，会自动使用默认配置
- * !!! 更改配置后请清空缓存，否则可能不生效
+ * @description 專案設定檔
+ * 只需要覆蓋專案中的一部分設定，不需要的設定不用覆蓋，會自動使用預設設定
+ * !!! 更改設定後請清空快取，否則可能不生效
  */
 export const overridesPreferences = defineOverridesPreferences({
   // overrides
   app: {
     name: import.meta.env.VITE_APP_TITLE,
+  },
+  widget: {
+    fullscreen: false,
+    languageToggle: false,
+    timezone: false,
+    lockScreen: false,
   },
 });

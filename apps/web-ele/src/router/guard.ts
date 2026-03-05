@@ -11,17 +11,17 @@ import { useAuthStore } from '#/store';
 import { generateAccess } from './access';
 
 /**
- * 通用守卫配置
+ * 通用守衛設定
  * @param router
  */
 function setupCommonGuard(router: Router) {
-  // 记录已经加载的页面
+  // 紀錄已經載入的頁面
   const loadedPaths = new Set<string>();
 
   router.beforeEach((to) => {
     to.meta.loaded = loadedPaths.has(to.path);
 
-    // 页面加载进度条
+    // 頁面載入進度條
     if (!to.meta.loaded && preferences.transition.progress) {
       startProgress();
     }
@@ -29,11 +29,11 @@ function setupCommonGuard(router: Router) {
   });
 
   router.afterEach((to) => {
-    // 记录页面是否加载,如果已经加载，后续的页面切换动画等效果不在重复执行
+    // 紀錄頁面是否載入,如果已經載入，後續的頁面切換動畫等效果不再重複執行
 
     loadedPaths.add(to.path);
 
-    // 关闭页面加载进度条
+    // 關閉頁面載入進度條
     if (preferences.transition.progress) {
       stopProgress();
     }
@@ -41,7 +41,7 @@ function setupCommonGuard(router: Router) {
 }
 
 /**
- * 权限访问守卫配置
+ * 權限存取守衛設定
  * @param router
  */
 function setupAccessGuard(router: Router) {
@@ -50,9 +50,35 @@ function setupAccessGuard(router: Router) {
     const userStore = useUserStore();
     const authStore = useAuthStore();
 
-    // 基本路由，这些路由不需要进入权限拦截
+    // SSO Token 攔截處理 (優先處理網址帶 Token 的情況)
+    const token = to.query.token as string;
+    if (token) {
+      const success = await authStore.ssoLogin(token);
+      if (success) {
+        // 驗證成功，移除網址上的 token 參數並重導向至原路徑
+        const newQuery = { ...to.query };
+        delete newQuery.token;
+        return { path: to.path, query: newQuery, replace: true };
+      }
+    }
+
+    // accessToken 檢查
+    if (!accessStore.accessToken) {
+      // 明確宣告忽略權限存取權限，則可以存取
+      if (to.meta.ignoreAccess) {
+        return true;
+      }
+
+      // [核心修正] 如果沒有 Token，則直接導向 HWS (不帶複雜的 redirect 參數)
+      const hwsUrl = import.meta.env.VITE_HWS_URL;
+      window.location.href = `${hwsUrl}login`;
+      return false;
+    }
+
+    // 基本路由，這些路由不需要進入權限攔截
+    // (此時已確認有 Token)
     if (coreRouteNames.includes(to.name as string)) {
-      if (to.path === LOGIN_PATH && accessStore.accessToken) {
+      if (to.path === LOGIN_PATH) {
         return decodeURIComponent(
           (to.query?.redirect as string) ||
             userStore.userInfo?.homePath ||
@@ -62,48 +88,25 @@ function setupAccessGuard(router: Router) {
       return true;
     }
 
-    // accessToken 检查
-    if (!accessStore.accessToken) {
-      // 明确声明忽略权限访问权限，则可以访问
-      if (to.meta.ignoreAccess) {
-        return true;
-      }
-
-      // 没有访问权限，跳转登录页面
-      if (to.fullPath !== LOGIN_PATH) {
-        return {
-          path: LOGIN_PATH,
-          // 如不需要，直接删除 query
-          query:
-            to.fullPath === preferences.app.defaultHomePath
-              ? {}
-              : { redirect: encodeURIComponent(to.fullPath) },
-          // 携带当前跳转的页面，登录后重新跳转该页面
-          replace: true,
-        };
-      }
-      return to;
-    }
-
-    // 是否已经生成过动态路由
+    // 是否已經生成過動態路由
     if (accessStore.isAccessChecked) {
       return true;
     }
 
     // 生成路由表
-    // 当前登录用户拥有的角色标识列表
+    // 當前登入使用者擁有的角色標識列表
     const userInfo = userStore.userInfo || (await authStore.fetchUserInfo());
     const userRoles = userInfo.roles ?? [];
 
-    // 生成菜单和路由
+    // 生成選單和路由
     const { accessibleMenus, accessibleRoutes } = await generateAccess({
       roles: userRoles,
       router,
-      // 则会在菜单中显示，但是访问会被重定向到403
+      // 則會在選單中顯示，但是存取會被重新導向到 403
       routes: accessRoutes,
     });
 
-    // 保存菜单信息和路由信息
+    // 儲存選單資訊和路由資訊
     accessStore.setAccessMenus(accessibleMenus);
     accessStore.setAccessRoutes(accessibleRoutes);
     accessStore.setIsAccessChecked(true);
@@ -120,13 +123,13 @@ function setupAccessGuard(router: Router) {
 }
 
 /**
- * 项目守卫配置
+ * 專案守衛設定
  * @param router
  */
 function createRouterGuard(router: Router) {
   /** 通用 */
   setupCommonGuard(router);
-  /** 权限访问 */
+  /** 權限存取 */
   setupAccessGuard(router);
 }
 

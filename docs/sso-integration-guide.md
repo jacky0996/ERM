@@ -1,136 +1,115 @@
-# HWS (Laravel) 與 EDM (Vue) SSO 整合技術指南 (無本地登入模式)
+# HWS (Laravel) 與 EDM (Vue) SSO 整合實作計畫書 (Token 交換方案)
 
-本指南詳細紀錄如何實作「一套系統登入，全處通行」，並完全移除 EDM 的本地登入介面，統一由 HWS 作為權限入口。
+本計畫書旨在建立一套安全、可靠且防禦 CSRF 的單一登入 (SSO) 機制。我們捨棄了依賴 Cookie 的 Session 共用方案，改採 **「Token 交換機制 (Token Exchange)」**。
 
 ---
 
-## 1. 互動流程圖 (Sequence Diagram)
-
-我們採用 **Token 交換模式** 來達成安全的身分同步：
+## 1. 核心流程概覽
 
 ```mermaid
 sequenceDiagram
-    participant User as 使用者
-    participant EDM as Vue (EDM) 子系統
-    participant HWS as Laravel (HWS) 身分中心
-
-    User->>EDM: 訪問 EDM 頁面
-    EDM->>EDM: 檢查本地是否有 Token
-    Note over EDM: 無 Token/已過期，啟動 SSO
-    EDM->>User: 強制跳轉至 HWS 登入頁<br/>(帶上 redirect_uri)
-    User->>HWS: 在 HWS 完成身分驗證
-    HWS->>HWS: 登入成功，生成短期 SSO Token
-    HWS->>User: 導向回 EDM<br/>(?token=xyz_123)
-    User->>EDM: 攜帶 SSO Token 重新進入
-    EDM->>HWS: [API] 驗證 SSO Token 並獲取 Access Token
-    HWS-->>EDM: 回傳 Access Token 與 UserInfo
-    EDM->>EDM: 存入 LocalStorage，完成無感登入
+    participant HWS as HWS (Laravel)
+    participant User as 使用者瀏覽器
+    participant EDM as EDM (Vue 3)
+    
+    User->>HWS: 1. 登入 HWS 並點擊 EDM 系統連結
+    HWS->>HWS: 2. 生成短期一次性 SSO Token
+    HWS->>User: 3. 重定向至 EDM (?token=SSO_TOKEN)
+    User->>EDM: 4. 攜帶 Token 進入系統
+    EDM->>HWS: 5. [POST] /sso/verify-token (交換正式 Token)
+    HWS-->>EDM: 6. 回傳正式 AccessToken + 使用者資訊
+    EDM->>EDM: 7. 存入 LocalStorage，移除網址參數，進入系統
 ```
 
 ---
 
-## 2. 移除本地登入機制
+## 2. Laravel (HWS) 端實作清單
 
-為了確保使用者只能從 HWS 進入，我們需要禁用 EDM 本地的登入入口。
+### A. 導向 EDM 的跳轉邏輯
+在產生導向 EDM 的連結時，請夾帶由後端生成的隨機 `token`。
 
-### A. 路由強制跳轉
-修改 `src/router/guard/authGuard.ts`（或相關的路由守衛），攔截對 `/login` 的訪問。
+```php
+// Laravel 範例
+public function redirectToEdm() {
+    $ssoToken = Str::random(40);
+    
+    // 將 Token 與 User ID 綁定，設定 60 秒效期
+    Cache::put("sso_token_{$ssoToken}", Auth::id(), 60);
 
-```typescript
-// src/router/guard/authGuard.ts
-if (to.path === '/login') {
-  // 不顯示 EDM 的登入表單，直接彈到 HWS 登入中心
-  const redirectUri = window.location.origin;
-  window.location.href = `https://hws.example.com/login?redirect_uri=${redirectUri}`;
-  return;
+    $edmUrl = config('app.edm_url'); // e.g., https://uatedm.hwacom.com
+    return redirect("{$edmUrl}/#/?token={$ssoToken}");
 }
 ```
 
-### B. 清除 API 登入定義
-在 `src/api/core/auth.ts` 中，將原有的 `loginApi` 替換為 `verifySsoTokenApi`。
-
----
-
-## 3. Laravel (HWS) 端實作
-
-### A. 登入後的 SSO Token 生成
-在 Laravel 的 `LoginController` 中，登入成功後若偵測到 `redirect_uri`，則發放 SSO Token。
+### B. 實作 Token 驗證 API
+新增一個不需要 CSRF 保護的 API 介面（建議放在 `routes/api.php`）。
 
 ```php
-// Laravel Controller
-public function authenticated(Request $request, $user) {
-    if ($request->has('redirect_uri')) {
-        $ssoToken = Str::random(40);
-        // SSO Token 必須極短時間（如 60 秒）且只能使用一次
-        Cache::put("sso_token_{$ssoToken}", $user->id, 60);
-
-        return redirect($request->redirect_uri . "?token=" . $ssoToken);
-    }
-    return redirect('/home');
-}
-```
-
-### B. 提供 Token 驗證 API
-```php
-Route::post('/sso/verify-token', function (Request $request) {
+// API 路由: POST /api/sso/verify-token
+public function verifyToken(Request $request) {
+    // 1. 使用 Cache::pull 確保 Token 驗證後立即失效 (一次性)
     $userId = Cache::pull("sso_token_{$request->token}");
-    if (!$userId) return response()->json(['message' => 'Invalid Token'], 401);
+    
+    if (!$userId) {
+        return response()->json(['message' => 'Token 無效或已過期'], 401);
+    }
 
     $user = User::find($userId);
-    // 生成給 EDM 專用的 Access Token
-    $accessToken = $user->createToken('edm-session')->plainTextToken;
+    
+    // 2. 生成正式的 API 訪問 Token (如 Sanctum 或 JWT)
+    $accessToken = $user->createToken('edm-access')->plainTextToken;
 
+    // 3. 回傳前端所需的標準格式
     return response()->json([
         'accessToken' => $accessToken,
-        'userInfo' => ['userId' => $user->id, 'realName' => $user->name]
+        'userInfo' => [
+            'userId' => $user->id,
+            'realName' => $user->name,
+            'roles' => $user->getRoleNames(), // 必須包含權限角色
+            'homePath' => '/dashboard/analysis', // 登入後的導向頁面
+        ]
     ]);
-});
+}
 ```
 
 ---
 
-## 4. Session 生存時間 (TTL) 與自動刷新
+## 3. Vue (EDM) 端更新說明 (已由 AI 完成)
 
-為了達成「操作中不登出，閒置即登出」的體驗：
+### A. 路由守衛攔截 (`src/router/guard.ts`)
+系統會在進入任何頁面前優先檢查網址是否有 `token`：
+- 若有 Token：呼叫 `authStore.ssoLogin(token)`。
+- 若驗證成功：跳轉回原目標頁面（並自動移除網址上的 Token 參數）。
 
-### A. API 行為自動續期 (Interceptor)
-修改 `src/api/request.ts`。每當使用者呼叫 API，代表其正在活動中，我們自動更新本地的活動紀錄。
-
-```typescript
-// src/api/request.ts (Request Interceptor)
-client.addRequestInterceptor({
-  fulfilled: async (config) => {
-    // 1. 每次有 API 行為，重置「最後活動時間」
-    localStorage.setItem('edm_last_activity', Date.now().toString());
-    
-    // 2. 在 Header 告知後端也延長後端的 Session (如果後端支援)
-    config.headers['X-Renew-Session'] = '1'; 
-    
-    return config;
-  },
-});
-```
-
-### B. 閒置檢查與自動退場
-在 `src/store/auth.ts` 或應用頂層監控活動紀錄。
-
-```typescript
-// 定時檢查 (例如每 1 分鐘檢查一次)
-setInterval(() => {
-  const lastActivity = parseInt(localStorage.getItem('edm_last_activity') || '0');
-  const now = Date.now();
-  const idleTimeout = 30 * 60 * 1000; // 設定 30 分鐘閒置
-
-  if (now - lastActivity > idleTimeout) {
-     // 超過 30 分鐘沒動靜，執行登出並跳回 HWS
-     useAuthStore().logout();
-  }
-}, 60000);
-```
+### B. 請求配置 (`src/api/request.ts`)
+- **安全性**：所有 API 請求**不開啟** `withCredentials`。
+- **認證**：使用 `Authorization: Bearer <token>` Header。這確保了系統完全免疫 CSRF 攻擊。
 
 ---
 
-## 🛡️ 安全注意事項
-1.  **Token 一次性**：在 Laravel 端驗證時務必使用 `Cache::pull` 確保 SSO Token 驗證後立即失效。
-2.  **HTTPS**：所有跨系統的 Token 傳遞與 API 呼叫必須在 HTTPS 下進行。
-3.  **登出連動**：當使用者在 HWS 點擊「登出」時，應透過 Redis 共享狀態或 API 通知方式，讓 EDM 的 Access Token 同步失效。
+## 4. 驗證步驟
+
+1. **第一階段**：在 Laravel 手動產生一個 Cache Token，並手動在瀏覽器輸入 `https://uatedm.hwacom.com/#/?token=TEST_TOKEN`。
+2. **第二階段**：觀察 Network 面板是否發出 `/sso/verify-token` 請求。
+3. **第三階段**：確認 EDM 網址是否變回乾淨的狀態，且成功進入 Dashboard。
+
+---
+
+## 5. 混合網路架構建議 (Public EDM + Private HWS)
+
+由於 EDM 系統需要處理 AWS 郵件狀態追蹤，必須對外聯網；而 HWS (Laravel) 位處內網。在這種「非對稱網路」環境下，Token 交換方案具有以下優勢：
+
+### A. 為什麼這比 Cookie 方案更穩健？
+- **Cookie 限制**：若使用 Cookie 方案，當使用者從外部網路存取 EDM 時，瀏覽器會因為無法連線至內網 HWS 而導致身份校驗失敗。
+- **Token 結耦**：Token 交換是「伺服器對伺服器」的驗證。使用者只需在「具備內網權限」時點擊連結完成跳轉，隨後即使在外部網路存取 EDM，EDM 後端也會透過內部通道或專屬 API 與 HWS 溝通，使用者端不需要再接觸內網。
+
+### B. 安全配套建議
+- **伺服器連線**：確保 EDM (公網伺服器) 的後端具備存取 HWS (內網) `/api/sso/verify-token` 的權限（可透過內部 VPN 或防火牆許可清單實作）。
+- **HTTPS 強化**：因 Token 會在網際網路上傳遞，全流程必須強制開啟 HTTPS 以防範攔截。
+
+---
+
+## 6. 安全性備註 (Security Note)
+
+> [!IMPORTANT]
+> 此方案透過 **「Header-based Auth」** 徹底避開了瀏覽器對 Cookie 的自動處理。惡意網站無法讀取您的 LocalStorage，也無法偽造自定義 Header，因此這是 SPA 與 API 分離架構下最安全的實作方式。

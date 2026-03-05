@@ -10,7 +10,13 @@ import { resetAllStores, useAccessStore, useUserStore } from '@vben/stores';
 import { ElNotification } from 'element-plus';
 import { defineStore } from 'pinia';
 
-import { getAccessCodesApi, getUserInfoApi, loginApi, logoutApi } from '#/api';
+import {
+  getAccessCodesApi,
+  getUserInfoApi,
+  loginApi,
+  logoutApi,
+  verifySsoTokenApi,
+} from '#/api';
 import { $t } from '#/locales';
 
 export const useAuthStore = defineStore('auth', () => {
@@ -21,26 +27,26 @@ export const useAuthStore = defineStore('auth', () => {
   const loginLoading = ref(false);
 
   /**
-   * 异步处理登录操作
+   * 非同步處理登入操作
    * Asynchronously handle the login process
-   * @param params 登录表单数据
+   * @param params 登入表單資料
    */
   async function authLogin(
     params: Recordable<any>,
     onSuccess?: () => Promise<void> | void,
   ) {
-    // 异步处理用户登录操作并获取 accessToken
+    // 非同步處理使用者登入操作並獲取 accessToken
     let userInfo: null | UserInfo = null;
     try {
       loginLoading.value = true;
       const { accessToken } = await loginApi(params);
 
-      // 如果成功获取到 accessToken
+      // 如果成功獲取到 accessToken
       if (accessToken) {
-        // 将 accessToken 存储到 accessStore 中
+        // 將 accessToken 儲存到 accessStore 中
         accessStore.setAccessToken(accessToken);
 
-        // 获取用户信息并存储到 accessStore 中
+        // 獲取使用者資訊並儲存到 accessStore 中
         const [fetchUserInfoResult, accessCodes] = await Promise.all([
           fetchUserInfo(),
           getAccessCodesApi(),
@@ -78,16 +84,48 @@ export const useAuthStore = defineStore('auth', () => {
     };
   }
 
+  /**
+   * 處理 SSO 登入 (Token 交換)
+   * @param token 來自 URL 的 SSO Token
+   */
+  async function ssoLogin(token: string) {
+    try {
+      loginLoading.value = true;
+      const { accessToken, userInfo } = await verifySsoTokenApi(token);
+
+      if (accessToken) {
+        // 儲存 Token
+        accessStore.setAccessToken(accessToken);
+        // 儲存使用者資訊
+        userStore.setUserInfo(userInfo);
+
+        // 紀錄最後活動時間 (Session 續期用)
+        localStorage.setItem('edm_last_activity', Date.now().toString());
+
+        // 獲取權限碼
+        const accessCodes = await getAccessCodesApi();
+        accessStore.setAccessCodes(accessCodes);
+
+        return true;
+      }
+    } catch (error) {
+      console.error('SSO Token Verification Failed:', error);
+    } finally {
+      loginLoading.value = false;
+    }
+    return false;
+  }
+
   async function logout(redirect: boolean = true) {
     try {
       await logoutApi();
     } catch {
-      // 不做任何处理
+      // 不做任何處理
     }
     resetAllStores();
     accessStore.setLoginExpired(false);
 
-    // 回登录页带上当前路由地址
+    // 回登入頁帶上當前路由位址
     await router.replace({
       path: LOGIN_PATH,
       query: redirect
@@ -115,5 +153,6 @@ export const useAuthStore = defineStore('auth', () => {
     fetchUserInfo,
     loginLoading,
     logout,
+    ssoLogin,
   };
 });
