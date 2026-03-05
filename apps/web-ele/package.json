@@ -16,7 +16,7 @@
   },
   "type": "module",
   "scripts": {
-    "build": "pnpm vite build --mode production",
+    "build": "pnpm vite build",
     "build:uat": "pnpm vite build --mode uat",
     "build:prod": "pnpm vite build --mode production",
     "dev": "pnpm vite --mode development",
