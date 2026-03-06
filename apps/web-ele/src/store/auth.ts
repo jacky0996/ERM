@@ -63,7 +63,7 @@ export const useAuthStore = defineStore('auth', () => {
           onSuccess
             ? await onSuccess?.()
             : await router.push(
-                userInfo.homePath || preferences.app.defaultHomePath,
+                userInfo?.homePath || preferences.app.defaultHomePath,
               );
         }
 
@@ -151,6 +151,12 @@ export const useAuthStore = defineStore('auth', () => {
   }
 
   async function fetchUserInfo() {
+    // 優化：如果 store 中已經有使用者資訊，則不再重複呼叫 API
+    if (userStore.userInfo && (userStore.userInfo as any).userId) {
+      console.log('[Auth] 使用快取中的使用者資訊，略過 API 請求。');
+      return userStore.userInfo as UserInfo;
+    }
+
     let userInfo: null | UserInfo = null;
     userInfo = await getUserInfoApi();
     userStore.setUserInfo(userInfo);
