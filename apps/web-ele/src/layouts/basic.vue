@@ -1,12 +1,7 @@
 <script lang="ts" setup>
 
 import { computed, watch } from 'vue';
-import { useRouter } from 'vue-router';
-
-import { AuthenticationLoginExpiredModal } from '@vben/common-ui';
-import { VBEN_GITHUB_URL } from '@vben/constants';
 import { useWatermark } from '@vben/hooks';
-import { CircleHelp } from '@vben/icons';
 import {
   BasicLayout,
   LockScreen,
@@ -14,35 +9,16 @@ import {
 } from '@vben/layouts';
 import { preferences } from '@vben/preferences';
 import { useAccessStore, useUserStore } from '@vben/stores';
-import { openWindow } from '@vben/utils';
-
-import { $t } from '#/locales';
 import { useAuthStore } from '#/store';
 import LoginForm from '#/views/_core/authentication/login.vue';
 
-const router = useRouter();
 const userStore = useUserStore();
 const authStore = useAuthStore();
 const accessStore = useAccessStore();
 const { destroyWatermark, updateWatermark } = useWatermark();
 
 const menus = computed(() => [
-  {
-    handler: () => {
-      router.push({ name: 'Profile' });
-    },
-    icon: 'lucide:user',
-    text: $t('page.auth.profile'),
-  },
-  {
-    handler: () => {
-      openWindow(`${VBEN_GITHUB_URL}/issues`, {
-        target: '_blank',
-      });
-    },
-    icon: CircleHelp,
-    text: '使用說明',
-  },
+  // 依要求隱藏個人中心與使用說明
 ]);
 
 const avatar = computed(() => {
@@ -83,8 +59,7 @@ watch(
         :avatar
         :menus
         :text="userStore.userInfo?.realName"
-        description="ann.vben@gmail.com"
-        tag-text="Pro"
+        :description="userStore.userInfo?.email || ''"
         @logout="handleLogout"
       />
     </template>

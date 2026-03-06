@@ -1,25 +1,25 @@
 import type { RouteRecordRaw } from 'vue-router';
 
-import { $t } from '#/locales';
-
 const routes: RouteRecordRaw[] = [
   {
     meta: {
-      icon: 'lucide:layout-dashboard',
+      icon: 'lucide:book-open',
       order: -1,
-      title: $t('page.dashboard.title'),
+      title: '使用說明',
+      hideChildrenInMenu: true, // 隱藏子選單，使根節點成為單一可點擊項目
     },
     name: 'Dashboard',
     path: '/dashboard',
+    redirect: '/analytics',
     children: [
       {
         name: 'Analytics',
         path: '/analytics',
-        component: () => import('#/views/dashboard/analytics/index.vue'),
+        component: () => import('#/views/guide/index.vue'), // 暫時替換為使用說明頁面
         meta: {
           affixTab: true,
-          icon: 'lucide:area-chart',
-          title: $t('page.dashboard.analytics'),
+          icon: 'lucide:book-open',
+          title: '使用說明',
         },
       },
       {
@@ -27,8 +27,9 @@ const routes: RouteRecordRaw[] = [
         path: '/workspace',
         component: () => import('#/views/dashboard/workspace/index.vue'),
         meta: {
+          hideInMenu: true,
           icon: 'carbon:workspace',
-          title: $t('page.dashboard.workspace'),
+          title: '工作台',
         },
       },
     ],
