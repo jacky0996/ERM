@@ -22,6 +22,7 @@ const routes: RouteRecordRaw[] = [
         meta: {
           title: '建立活動',
           authority: ['super', 'admin', 'event_create'],
+          hideInMenu: true, // 從側邊欄隱藏，改由列表按鈕觸發
         },
       },
       {
@@ -49,6 +50,7 @@ const routes: RouteRecordRaw[] = [
         meta: {
           title: '橫幅廣告',
           authority: ['super', 'admin', 'banner_read'],
+          hideInMenu: true, // 依照需求隱藏橫幅廣告功能
         },
       },
     ],

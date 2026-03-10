@@ -1,0 +1,18 @@
+/* 活動新增頁面樣式 */
+
+/* 讓日期選擇器寬度 100% */
+.el-date-editor {
+  width: 100%;
+}
+
+/* 讓所有單行輸入框加高 */
+.el-input__wrapper {
+  min-height: 44px;
+  padding-top: 4px;
+  padding-bottom: 4px;
+}
+
+/* 讓日期選擇器也同步加高 */
+.el-input.el-date-editor .el-input__wrapper {
+  min-height: 44px;
+}
