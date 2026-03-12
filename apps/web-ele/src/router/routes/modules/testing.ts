@@ -6,9 +6,8 @@ const routes: RouteRecordRaw[] = [
       icon: 'lucide:clipboard-check',
       order: 10,
       title: '測試項目',
-      hideChildrenInMenu: true, // 隱藏子選單，使根節點成為單一可點擊項目
     },
-    name: 'TestGuide',
+    name: 'TestGroup',
     path: '/testing',
     redirect: '/testing/index',
     children: [
@@ -17,9 +16,17 @@ const routes: RouteRecordRaw[] = [
         path: 'index',
         component: () => import('#/views/guide/test-guide.vue'),
         meta: {
-          affixTab: false,
           icon: 'lucide:clipboard-check',
           title: '測試項目',
+        },
+      },
+      {
+        name: 'UMLView',
+        path: 'uml',
+        component: () => import('#/views/system/uml/index.vue'),
+        meta: {
+          icon: 'lucide:file-json-2',
+          title: 'UML 展示',
         },
       },
     ],

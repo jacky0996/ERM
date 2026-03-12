@@ -29,7 +29,6 @@
   "dependencies": {
     "@ckeditor/ckeditor5-basic-styles": "^47.6.0",
     "@ckeditor/ckeditor5-block-quote": "^47.6.0",
-
     "@ckeditor/ckeditor5-editor-classic": "^47.6.0",
     "@ckeditor/ckeditor5-essentials": "^47.6.0",
     "@ckeditor/ckeditor5-font": "^47.6.0",
@@ -60,6 +59,7 @@
     "ckeditor5": "47.6.0",
     "dayjs": "catalog:",
     "element-plus": "catalog:",
+    "mermaid": "^11.13.0",
     "pinia": "catalog:",
     "vue": "catalog:",
     "vue-router": "catalog:",
