@@ -33,7 +33,14 @@ import { Page } from '@vben/common-ui';
                 </ul>
               </li>
               <li><strong>人員詳情編輯：</strong>點擊任一人員進入詳情，嘗試編輯「行動電話」與「電子郵件」。確認編輯成功後會有提示框，且重新載入後資料正確。</li>
-              <li><strong>狀態切換：</strong>在列表中切換人員的「啟用/禁用」狀態，確認狀態變更成功。</li>
+              <li><strong>狀態即時調整：</strong>使用 Switch 切換狀態，確認列表同步與後端狀態變更。</li>
+              <li><strong>業務資訊驗證：</strong>
+                <ul class="list-disc pl-5 mt-1 space-y-1 text-gray-600">
+                  <li>點擊詳細頁「業務」後方的編輯按鈕，確認彈窗正確顯示。</li>
+                  <li>輸入有效工號並儲存，確認頁面自動重新整理且顯示最新工號與姓名。</li>
+                  <li>輸入無效工號或清空儲存，確認顯示「查無此業務」錯誤訊息。</li>
+                </ul>
+              </li>
             </ul>
           </div>
         </div>
@@ -50,7 +57,14 @@ import { Page } from '@vben/common-ui';
             <h3 class="font-bold text-base mb-2 border-l-4 border-purple-500 pl-2"> 活動建立 </h3>
             <ul class="list-decimal pl-5 space-y-2">
               <li><strong>視覺化預覽：</strong>在建立頁點擊「預覽活動」，確認 Gmail 模擬介面正確顯示。並切換「電腦版/手機版」，檢查響應式排版是否正常。</li>
-              <li><strong>編輯器測試：</strong>輸入活動內容（使用 CKEditor），測試標題、圖片插入是否與預覽內容一致。</li>
+              <li><strong>欄位驗證：</strong>
+                <ul class="list-disc pl-5 mt-1 space-y-1 text-gray-600">
+                  <li>活動編號：確認建立時可輸入，但進入「詳細頁」後強制鎖定（不可編輯）。</li>
+                  <li>活動類型：選擇下拉選單（如：會議、工作坊），確認預覽與詳情中皆正確呈現對應名稱。</li>
+                  <li>按鈕風格：確認建立頁與詳細頁的按鈕配置（返回、預覽、儲存）是否維持一致的大型佈局。</li>
+                </ul>
+              </li>
+              <li><strong>內容編輯器：</strong>使用 CKEditor 插入圖片並編輯內容，確認預覽顯示正常。</li>
               <li><strong>橫幅上傳：</strong>上傳活動主視覺 (1920x600)，確認上傳後能即時看見縮圖回顯。</li>
             </ul>
           </div>

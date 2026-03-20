@@ -14,6 +14,8 @@ import {
   ElRadioGroup,
   ElUpload,
   ElIcon,
+  ElSelect,
+  ElOption,
 } from 'element-plus';
 
 // Hooks
@@ -100,7 +102,34 @@ function updateIframeHeight(e: any) {
           </ElUpload>
         </ElFormItem>
 
-        <!-- 活動名稱 -->
+        <!-- 1. 活動編號 -->
+        <ElFormItem label="活動編號" prop="event_number" required>
+          <ElInput
+            v-model="form.event_number"
+            placeholder="請輸入活動編號"
+            clearable
+            class="custom-height"
+          />
+        </ElFormItem>
+
+        <!-- 2. 活動類型 -->
+        <ElFormItem label="活動類型" prop="activity_type" required>
+          <ElSelect
+            v-model="form.activity_type"
+            placeholder="請選擇活動類型"
+            class="w-full custom-height"
+            clearable
+          >
+            <ElOption label="會議" :value="0" />
+            <ElOption label="工作坊" :value="1" />
+            <ElOption label="記者會" :value="2" />
+            <ElOption label="標準制定會議" :value="3" />
+            <ElOption label="創意競賽" :value="4" />
+            <ElOption label="其他活動" :value="5" />
+          </ElSelect>
+        </ElFormItem>
+
+        <!-- 3. 活動名稱 -->
         <ElFormItem label="活動名稱" prop="title" required>
           <ElInput
             v-model="form.title"
@@ -180,14 +209,15 @@ function updateIframeHeight(e: any) {
           />
         </ElFormItem>
 
-        <!-- 按鈕 -->
-        <ElFormItem class="pt-4">
-          <div class="flex gap-3">
-            <ElButton type="warning" plain @click="handlePreview">預覽</ElButton>
-            <ElButton type="primary" @click="handleSubmit">建立活動</ElButton>
-            <ElButton @click="handleCancel">取消</ElButton>
+        <!-- 按鈕區：調整為與詳細頁一致的一左一右佈局 -->
+        <div class="mt-8 flex items-center justify-between border-t py-6">
+          <ElButton size="large" @click="handleCancel"> 返回列表 </ElButton>
+
+          <div class="flex gap-4">
+            <ElButton size="large" @click="handlePreview"> 測試預覽 </ElButton>
+            <ElButton type="primary" size="large" @click="handleSubmit"> 建立活動 </ElButton>
           </div>
-        </ElFormItem>
+        </div>
       </ElForm>
 
       <!-- 預覽 Dialog -->

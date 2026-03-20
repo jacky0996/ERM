@@ -8,19 +8,17 @@ graph TD
     List --> Search[查詢: 輸入姓名或選擇狀態]
     
     List --> ImportStart[匯入人員名單]
-    ImportStart --> Sample[下載範例檔]
-    ImportStart --> SelectGroup{選擇匯入群組?}
-    SelectGroup -- 是 --> GroupImport[匯入至指定群組]
-    SelectGroup -- 否 --> DirectImport[直接匯入人員名單]
+    ImportStart --> DirectImport[Excel 匯入至指定或預選群組]
     
     List --> ClickName[點選人名]
     ClickName --> Detail[人員詳細頁面]
     
-    Detail --> Edit[修改基本資料: 電話/電子郵件]
-    Edit --> Submit[點選編輯後送出]
-    
-    Detail --> Delete[點選刪除]
-    Delete --> Deleted[刪除該筆資料]
+    Detail --> EditBase[修改聯絡資訊: 電話/電子郵件]
+    EditBase --> SubmitBase[行內即時同步更新]
+
+    Detail --> EditSales[點選業務編輯按鈕]
+    EditSales --> SalesPop[出現彈窗輸入業務工號]
+    SalesPop --> SubmitSales[送出並強制重新整理頁面]
     
     Detail --> JumpGroup[點選關聯群組名稱]
     JumpGroup --> GroupDetail[跳轉至群組詳細頁面]
@@ -69,26 +67,21 @@ graph TD
     List --> SearchEvent[查詢: 活動名稱搜尋]
     
     List --> CreateStart[建立活動項目]
-    CreateStart --> MetaData[輸入活動名稱/時間/地標]
-    MetaData --> Banner[上傳 1920x600 活動橫幅]
-    Banner --> CKEditor[使用 CKEditor 編輯活動內容]
-    CKEditor --> Preview[Gmail 風格預覽: Web/Mobile 切換]
+    CreateStart --> CreateInput[輸入順序: 編號 > 類型 > 名稱]
+    CreateInput --> CKEditor[橫幅上傳與內容編輯]
+    CKEditor --> Preview[Gmail 雙模式預覽]
     Preview --> SubmitCreate[儲存建立]
 
     List --> ClickEventName[點選活動名稱]
-    ClickEventName --> Detail[活動詳細頁面 - 頁籤式設計]
+    ClickEventName --> Detail[活動詳細頁面]
     
     Detail -- 活動預覽(詳細頁) --> ReadOnly{預設唯讀模式}
-    ReadOnly -- 點選編輯 --> EditMode[編輯模式: 修改內容/橫幅/狀態]
-    EditMode -- 儲存/取消 --> ReadOnly
+    ReadOnly -- 活動編號 --> Locked[鎖定狀態: 不可修改]
+    ReadOnly -- 點選編輯 --> EditMode[編輯模式: 名稱/類型/內容/時間]
+    EditMode -- 儲存更新 --> Success[更新後回傳並同步]
     
     Detail -- 邀請名單 --> InviteList[邀請名單分頁列表]
-    InviteList --> SearchName[姓名搜尋過濾]
-    InviteList --> ImportGroup[從群組列表匯入人員]
-    ImportGroup --> SelectPop[彈窗選擇欲匯入群組]
-    SelectPop --> FetchAndRender[API 載入並即時同步數值]
-    
-    Detail -- 其他功能頁籤 --> Future[分析/問卷/設定 開發中]
+    InviteList --> ImportGroup[從現有群組列表匯入人員]
 `;
 </script>
 
@@ -100,7 +93,7 @@ graph TD
           <el-tab-pane label="👤 人員管理">
             <div class="py-4">
               <div class="mb-4 text-sm text-gray-500 italic">
-                人員管理－描述：包含人員搜尋、Excel 匯入流程（範例下載/群組選擇）、詳細資料編輯及跳轉邏輯。
+                人員管理－描述：包含人員搜尋、Excel 匯入流程、業務工號編輯（彈窗）及詳細資料更新邏輯。
               </div>
               <MermaidView :content="memberUml" />
             </div>
@@ -118,7 +111,7 @@ graph TD
           <el-tab-pane label="📅 活動管理">
             <div class="py-4">
               <div class="mb-4 text-sm text-gray-500 italic">
-                活動管理－描述：包含活動建立流程（預覽/編輯）、詳細頁頁籤設計以及邀請名單匯入邏輯。
+                活動管理－描述：呈現編號/類型/名稱之建立順序、詳細頁編號鎖定規則以及邀請名單匯入邏輯。
               </div>
               <MermaidView :content="eventUml" />
             </div>
@@ -153,7 +146,6 @@ graph TD
   padding: 0 20px 20px;
 }
 </style>
-
 
 <style scoped>
 .el-card {

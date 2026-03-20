@@ -17,6 +17,8 @@ import {
   ElEmpty,
   ElRadioButton,
   ElRadioGroup,
+  ElSelect,
+  ElOption,
 } from 'element-plus';
 
 // Hooks (重用列表元件或新寫的 hook)
@@ -123,7 +125,34 @@ function updateIframeHeight(e: any) {
                   </ElUpload>
                 </ElFormItem>
 
-                <!-- 活動名稱 -->
+                <!-- 1. 活動編號 -->
+                <ElFormItem label="活動編號" prop="event_number" required>
+                  <ElInput
+                    v-model="form.event_number"
+                    placeholder="請輸入活動編號"
+                    :disabled="true"
+                    class="custom-height"
+                  />
+                </ElFormItem>
+
+                <!-- 2. 活動類型 -->
+                <ElFormItem label="活動類型" prop="activity_type" required>
+                  <ElSelect
+                    v-model="form.activity_type"
+                    placeholder="請選擇活動類型"
+                    class="w-full custom-height"
+                    clearable
+                  >
+                    <ElOption label="會議" :value="0" />
+                    <ElOption label="工作坊" :value="1" />
+                    <ElOption label="記者會" :value="2" />
+                    <ElOption label="標準制定會議" :value="3" />
+                    <ElOption label="創意競賽" :value="4" />
+                    <ElOption label="其他活動" :value="5" />
+                  </ElSelect>
+                </ElFormItem>
+
+                <!-- 3. 活動名稱 -->
                 <ElFormItem label="活動名稱" prop="title" required>
                   <ElInput
                     v-model="form.title"

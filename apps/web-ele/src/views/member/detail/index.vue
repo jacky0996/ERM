@@ -2,8 +2,9 @@
 import { ref, computed, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { Page } from '@vben/common-ui';
-import { ElCard, ElDescriptions, ElDescriptionsItem, ElTag, ElButton, ElInput, ElMessage, ElMessageBox, ElSwitch } from 'element-plus';
+import { ElCard, ElDescriptions, ElDescriptionsItem, ElTag, ElButton, ElInput, ElMessage, ElMessageBox, ElSwitch, ElDialog, ElForm, ElFormItem } from 'element-plus';
 import { getMemberDetailApi, updateMemberStatusApi, updateMemberMobileApi, updateMemberEmailApi } from '#/api/member';
+import { requestClient } from '#/api/request';
 import { formatDateTime } from '#/utils/date';
 
 const route = useRoute();
@@ -14,6 +15,7 @@ const memberId = computed(() => route.params.id as string);
 const memberData = ref<any>({
   name: '',
   status: 1,
+  salesInfo: '',    
   groups: [],       
   mobiles: [],    
   emails: [],      
@@ -32,10 +34,15 @@ async function fetchMemberData() {
   loading.value = true;
   try {
     const res = await getMemberDetailApi(memberId.value);
+    // 處理業務資訊
+    const sales = res.sales || {};
+    const salesText = (sales.enumber || '') + (sales.name || '');
+
     memberData.value = {
       ...res,
       name: res.name || '',
       status: res.status ?? 1,
+      salesInfo: salesText,
       groups: res.groups || [],
       mobiles: res.mobiles || [],
       emails: res.emails || [],
@@ -171,6 +178,44 @@ async function handleStatusChange(val: any) {
   }
 }
 
+// 業務編輯相關
+const salesEditVisible = ref(false);
+const salesEditEnumber = ref('');
+
+function handleSalesEdit() {
+  salesEditVisible.value = true;
+  salesEditEnumber.value = ''; // 每次開啟重置，或是預填目前工號
+}
+
+async function handleSalesSave() {
+  if (!salesEditEnumber.value) {
+    ElMessage.warning('請輸入工號');
+    return;
+  }
+
+  try {
+    loading.value = true;
+    const res: any = await requestClient.post('/edm/member/editSales', {
+      member_id: memberId.value,
+      enumber: salesEditEnumber.value
+    }, { responseReturn: 'body' });
+    
+    if (res.code === 0 || res.code === 200 || res.status === true) {
+      ElMessage.success('業務資訊更新成功');
+      salesEditVisible.value = false;
+      // 依要求執行全頁重新整理
+      window.location.reload();
+    } else {
+      // 失敗時顯示特定訊息
+      throw new Error('查無此業務');
+    }
+  } catch (error: any) {
+    ElMessage.error(error.message || '查無此業務');
+  } finally {
+    loading.value = false;
+  }
+}
+
 watch(
   () => memberId.value,
   (newId) => {
@@ -213,8 +258,46 @@ function handleBack() {
             @change="handleStatusChange"
           />
         </ElDescriptionsItem>
+        <ElDescriptionsItem label="業務">
+          <div class="flex items-center justify-between w-full">
+            <span>{{ formatValue(memberData.salesInfo) }}</span>
+            <ElButton 
+              size="small" 
+              type="primary" 
+              plain
+              @click="handleSalesEdit"
+            >
+              編輯
+            </ElButton>
+          </div>
+        </ElDescriptionsItem>
       </ElDescriptions>
     </ElCard>
+
+    <!-- 業務編輯彈窗 -->
+    <ElDialog
+      v-model="salesEditVisible"
+      title="修改業務資訊"
+      width="400px"
+      append-to-body
+      destroy-on-close
+    >
+      <ElForm label-position="top">
+        <ElFormItem label="工號" required>
+          <ElInput 
+            v-model="salesEditEnumber" 
+            placeholder="請輸入工號 " 
+            clearable
+          />
+        </ElFormItem>
+      </ElForm>
+      <template #footer>
+        <div class="flex justify-end gap-3">
+          <ElButton @click="salesEditVisible = false">取消</ElButton>
+          <ElButton type="primary" @click="handleSalesSave" :loading="loading">儲存</ElButton>
+        </div>
+      </template>
+    </ElDialog>
 
     <!-- 隸屬組織 -->
     <ElCard shadow="never" class="detail-card">

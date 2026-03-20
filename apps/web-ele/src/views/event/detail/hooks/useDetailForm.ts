@@ -17,6 +17,8 @@ export function useDetailForm(formRef: any) {
   const form = reactive({
     id: eventId.value,
     title: '',
+    event_number: '',
+    activity_type: '' as number | string,
     summary: '',
     start_time: '' as null | string,
     end_time: '' as null | string,
@@ -32,6 +34,8 @@ export function useDetailForm(formRef: any) {
   /** 表單驗證規則 */
   const rules: FormRules = {
     title: [{ required: true, message: '請輸入活動名稱', trigger: 'blur' }],
+    event_number: [{ required: true, message: '請輸入活動編號', trigger: 'blur' }],
+    activity_type: [{ required: true, message: '請選擇活動類型', trigger: 'change' }],
     summary: [{ required: true, message: '請輸入活動簡介', trigger: 'blur' }],
     start_time: [{ required: true, message: '請選擇開始時間', trigger: 'change' }],
     end_time: [{ required: true, message: '請選擇結束時間', trigger: 'change' }],
@@ -52,6 +56,9 @@ export function useDetailForm(formRef: any) {
       
       // 填入表單資料 (可根據實際 API 回傳欄位調整)
       form.title = detail.title || '';
+      form.event_number = detail.event_number || '';
+      // 優先讀取 type，若無則降級讀取 activity_type
+      form.activity_type = detail.type !== undefined ? detail.type : (detail.activity_type !== undefined ? detail.activity_type : '');
       form.summary = detail.summary || detail.description || '';
       form.start_time = detail.start_time || '';
       form.end_time = detail.end_time || '';
@@ -125,6 +132,7 @@ export function useDetailForm(formRef: any) {
       const userInfo: any = userStore.userInfo || {};
       const payload = {
         ...form,
+        type: form.activity_type, // 在更新 API 中同樣發送 type 參數
         updater_id: userInfo?.id || userInfo?.userId || '',
       };
       
@@ -155,6 +163,16 @@ export function useDetailForm(formRef: any) {
 
   function generatePreviewHtml() {
     const banner = form.img_url || '/event_default.png';
+    const typeMap: Record<string, string> = {
+      '0': '會議',
+      '1': '工作坊',
+      '2': '記者會',
+      '3': '標準制定會議',
+      '4': '創意競賽',
+      '5': '其他活動',
+    };
+    const typeName = typeMap[String(form.activity_type)] || '-';
+
     return `
       <!DOCTYPE html>
       <html style="overflow: hidden;">
@@ -166,6 +184,7 @@ export function useDetailForm(formRef: any) {
             .body { padding: 30px; }
             .title { font-size: 24px; font-weight: bold; margin-bottom: 10px; color: #1a73e8; }
             .info { background: #f8f9fa; border-left: 4px solid #1a73e8; padding: 15px; margin: 20px 0; font-size: 14px; }
+            .info-item { margin-bottom: 4px; }
             .content { line-height: 1.6; font-size: 15px; margin-top: 25px; }
             .content img { max-width: 100%; height: auto; border-radius: 4px; }
             .footer { padding: 20px; text-align: center; font-size: 12px; color: #666; background: #fafafa; border-top: 1px solid #efefef; }
@@ -177,8 +196,10 @@ export function useDetailForm(formRef: any) {
             <div class="body">
               <div class="title">${form.title || '（未輸入名稱）'}</div>
               <div class="info">
-                <div><strong>📍 地標：</strong>${form.landmark || '-'}</div>
-                <div><strong>📅 時間：</strong>${form.start_time || '-'} ~ ${form.end_time || '-'}</div>
+                <div class="info-item"><strong>🆔 活動編號：</strong>${form.event_number || '-'}</div>
+                <div class="info-item"><strong>🏷️ 活動類型：</strong>${typeName}</div>
+                <div class="info-item"><strong>📍 活動地標：</strong>${form.landmark || '-'}</div>
+                <div class="info-item"><strong>📅 活動時間：</strong>${form.start_time || '-'} ~ ${form.end_time || '-'}</div>
               </div>
               <div class="content">${form.content || '請輸入活動內容...'}</div>
             </div>

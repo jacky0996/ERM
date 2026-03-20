@@ -11,6 +11,8 @@ export function useForm(formRef: any) {
   
   const form = reactive({
     title: '',
+    event_number: '', // 活動編號
+    activity_type: '' as number | string, // 活動類型 (0-5)
     summary: '',
     start_time: '' as null | string,
     end_time: '' as null | string,
@@ -26,6 +28,8 @@ export function useForm(formRef: any) {
   /** 表單驗證規則 */
   const rules: FormRules = {
     title: [{ required: true, message: '請輸入活動名稱', trigger: 'blur' }],
+    event_number: [{ required: true, message: '請輸入活動編號', trigger: 'blur' }],
+    activity_type: [{ required: true, message: '請選擇活動類型', trigger: 'change' }],
     summary: [{ required: true, message: '請輸入活動簡介', trigger: 'blur' }],
     start_time: [{ required: true, message: '請選擇開始時間', trigger: 'change' }],
     end_time: [{ required: true, message: '請選擇結束時間', trigger: 'change' }],
@@ -69,6 +73,7 @@ export function useForm(formRef: any) {
       // 組合要發送給後端的 payload，加入 user 相關資訊
       const payload = {
         ...form,
+        type: form.activity_type, // 將 activity_type 映射為後端需要的 type 參數
         user_id: userInfo?.id || userInfo?.userId || '', // 自動抓取 id 或 userId
         creator_name: userInfo?.realName || userInfo?.username || '', // 附帶建立者名稱供參考
       };
@@ -99,6 +104,16 @@ export function useForm(formRef: any) {
 
   function generatePreviewHtml() {
     const banner = form.img_url || '/event_default.png';
+    const typeMap: Record<string, string> = {
+      '0': '會議',
+      '1': '工作坊',
+      '2': '記者會',
+      '3': '標準制定會議',
+      '4': '創意競賽',
+      '5': '其他活動',
+    };
+    const typeName = typeMap[String(form.activity_type)] || '-';
+
     return `
       <!DOCTYPE html>
       <html style="overflow: hidden;">
@@ -110,6 +125,7 @@ export function useForm(formRef: any) {
             .body { padding: 30px; }
             .title { font-size: 24px; font-weight: bold; margin-bottom: 10px; color: #1a73e8; }
             .info { background: #f8f9fa; border-left: 4px solid #1a73e8; padding: 15px; margin: 20px 0; font-size: 14px; }
+            .info-item { margin-bottom: 4px; }
             .content { line-height: 1.6; font-size: 15px; margin-top: 25px; }
             .content img { max-width: 100%; height: auto; border-radius: 4px; }
             .footer { padding: 20px; text-align: center; font-size: 12px; color: #666; background: #fafafa; border-top: 1px solid #efefef; }
@@ -121,8 +137,10 @@ export function useForm(formRef: any) {
             <div class="body">
               <div class="title">${form.title || '（未輸入名稱）'}</div>
               <div class="info">
-                <div><strong>📍 地標：</strong>${form.landmark || '-'}</div>
-                <div><strong>📅 時間：</strong>${form.start_time || '-'} ~ ${form.end_time || '-'}</div>
+                <div class="info-item"><strong>🆔 活動編號：</strong>${form.event_number || '-'}</div>
+                <div class="info-item"><strong>🏷️ 活動類型：</strong>${typeName}</div>
+                <div class="info-item"><strong>📍 活動地標：</strong>${form.landmark || '-'}</div>
+                <div class="info-item"><strong>📅 活動時間：</strong>${form.start_time || '-'} ~ ${form.end_time || '-'}</div>
               </div>
               <div class="content">${form.content || '請輸入活動內容...'}</div>
             </div>
