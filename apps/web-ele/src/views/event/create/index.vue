@@ -102,16 +102,6 @@ function updateIframeHeight(e: any) {
           </ElUpload>
         </ElFormItem>
 
-        <!-- 1. 活動編號 -->
-        <ElFormItem label="活動編號" prop="event_number" required>
-          <ElInput
-            v-model="form.event_number"
-            placeholder="請輸入活動編號"
-            clearable
-            class="custom-height"
-          />
-        </ElFormItem>
-
         <!-- 2. 活動類型 -->
         <ElFormItem label="活動類型" prop="activity_type" required>
           <ElSelect

@@ -28,7 +28,6 @@ export function useForm(formRef: any) {
   /** 表單驗證規則 */
   const rules: FormRules = {
     title: [{ required: true, message: '請輸入活動名稱', trigger: 'blur' }],
-    event_number: [{ required: true, message: '請輸入活動編號', trigger: 'blur' }],
     activity_type: [{ required: true, message: '請選擇活動類型', trigger: 'change' }],
     summary: [{ required: true, message: '請輸入活動簡介', trigger: 'blur' }],
     start_time: [{ required: true, message: '請選擇開始時間', trigger: 'change' }],
@@ -70,12 +69,13 @@ export function useForm(formRef: any) {
       // 取得全域儲存的使用者資訊
       const userInfo: any = userStore.userInfo || {};
       
-      // 組合要發送給後端的 payload，加入 user 相關資訊
+      // 組合要發送給後端的 payload，不送出 event_number
+      const { event_number, ...formWithoutNumber } = form;
       const payload = {
-        ...form,
-        type: form.activity_type, // 將 activity_type 映射為後端需要的 type 參數
-        user_id: userInfo?.id || userInfo?.userId || '', // 自動抓取 id 或 userId
-        creator_name: userInfo?.realName || userInfo?.username || '', // 附帶建立者名稱供參考
+        ...formWithoutNumber,
+        type: form.activity_type, 
+        user_id: userInfo?.id || userInfo?.userId || '', 
+        creator_name: userInfo?.realName || userInfo?.username || '', 
       };
       
       const res: any = await requestClient.post('/edm/event/create', payload, {

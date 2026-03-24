@@ -34,7 +34,6 @@ export function useDetailForm(formRef: any) {
   /** 表單驗證規則 */
   const rules: FormRules = {
     title: [{ required: true, message: '請輸入活動名稱', trigger: 'blur' }],
-    event_number: [{ required: true, message: '請輸入活動編號', trigger: 'blur' }],
     activity_type: [{ required: true, message: '請選擇活動類型', trigger: 'change' }],
     summary: [{ required: true, message: '請輸入活動簡介', trigger: 'blur' }],
     start_time: [{ required: true, message: '請選擇開始時間', trigger: 'change' }],
@@ -130,8 +129,10 @@ export function useDetailForm(formRef: any) {
       loading.value = true;
       
       const userInfo: any = userStore.userInfo || {};
+      const { event_number, ...formWithoutNumber } = form;
+
       const payload = {
-        ...form,
+        ...formWithoutNumber,
         type: form.activity_type, // 在更新 API 中同樣發送 type 參數
         updater_id: userInfo?.id || userInfo?.userId || '',
       };
