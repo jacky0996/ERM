@@ -16,6 +16,7 @@ import {
   ElIcon,
   ElSelect,
   ElOption,
+  ElSwitch,
 } from 'element-plus';
 
 // Hooks
@@ -130,6 +131,17 @@ function updateIframeHeight(e: any) {
             class="custom-height"
           />
         </ElFormItem>
+
+        <!-- 4. 報名表與審核設定 -->
+        <div class="grid grid-cols-2 gap-4 bg-gray-50/50 p-4 rounded-xl border border-dashed border-gray-200 mb-6 font-bold">
+          <ElFormItem label="是否需要報名表" prop="is_registration" class="mb-0 text-primary">
+            <ElSwitch v-model="form.is_registration" />
+          </ElFormItem>
+
+          <ElFormItem v-if="form.is_registration" label="報名表是否需要審核" prop="is_approval" class="mb-0 text-primary">
+            <ElSwitch v-model="form.is_approval" />
+          </ElFormItem>
+        </div>
 
         <!-- 活動簡介 -->
         <ElFormItem label="活動簡介" prop="summary" required>

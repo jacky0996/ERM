@@ -26,6 +26,8 @@ export function useDetailForm(formRef: any) {
     address: '',
     img_url: '/event_default.png',
     content: '',
+    is_registration: false,
+    is_approval: false,
   });
 
   const bannerPreviewUrl = ref<string>('/event_default.png');
@@ -50,13 +52,10 @@ export function useDetailForm(formRef: any) {
     try {
       loading.value = true;
       const res: any = await getEventDetailApi({ id: eventId.value });
-      // 假設回傳資料在 res.data 或是直接展開
       const detail = res?.data || res || {};
       
-      // 填入表單資料 (可根據實際 API 回傳欄位調整)
       form.title = detail.title || '';
       form.event_number = detail.event_number || '';
-      // 優先讀取 type，若無則降級讀取 activity_type
       form.activity_type = detail.type !== undefined ? detail.type : (detail.activity_type !== undefined ? detail.activity_type : '');
       form.summary = detail.summary || detail.description || '';
       form.start_time = detail.start_time || '';
@@ -65,6 +64,10 @@ export function useDetailForm(formRef: any) {
       form.address = detail.address || '';
       form.img_url = detail.img_url || detail.banner_url || '/event_default.png';
       form.content = detail.content || '';
+      
+      // 轉換數據格式 (1/0 -> Boolean)
+      form.is_registration = detail.is_registration === 1;
+      form.is_approval = detail.is_approval === 1;
 
       bannerPreviewUrl.value = form.img_url;
     } catch (error) {
@@ -79,7 +82,6 @@ export function useDetailForm(formRef: any) {
     () => eventId.value,
     (newId) => {
       if (newId) {
-        // 重置唯讀狀態並重新獲取資料
         isReadonly.value = true;
         fetchEventDetail();
       }
@@ -87,7 +89,6 @@ export function useDetailForm(formRef: any) {
     { immediate: true },
   );
 
-  /** 上傳前確認格式 */
   const beforeBannerUpload: UploadProps['beforeUpload'] = (rawFile) => {
     const allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
     if (!allowedTypes.includes(rawFile.type)) {
@@ -101,7 +102,6 @@ export function useDetailForm(formRef: any) {
     return true;
   };
 
-  /** 選擇檔案後即時預覽 */
   function handleBannerChange(file: UploadFile) {
     if (file.raw) {
       bannerPreviewUrl.value = URL.createObjectURL(file.raw);
@@ -110,19 +110,16 @@ export function useDetailForm(formRef: any) {
     }
   }
 
-  /** 切換編輯模式 */
   function toggleEdit() {
     isReadonly.value = false;
   }
 
-  /** 放棄編輯並還原 */
   function cancelEdit() {
     isReadonly.value = true;
-    fetchEventDetail(); // 重新拉取原始資料覆蓋
+    fetchEventDetail(); 
     formRef.value?.clearValidate();
   }
 
-  /** 送出表單 (更新) */
   async function handleSubmit() {
     try {
       await formRef.value?.validate();
@@ -133,17 +130,18 @@ export function useDetailForm(formRef: any) {
 
       const payload = {
         ...formWithoutNumber,
-        type: form.activity_type, // 在更新 API 中同樣發送 type 參數
+        type: form.activity_type,
         updater_id: userInfo?.id || userInfo?.userId || '',
+        is_registration: form.is_registration ? 1 : 0,
+        is_approval: form.is_approval ? 1 : 0,
       };
       
       const res: any = await updateEventApi(payload);
       
-      // 使用與 create 相同的驗證邏輯：如果 res 有 code = 0，或 requestClient 已經解包
       if (res && (res.code === 200 || res.code === 0 || !res.code)) {
         ElMessage.success('更新成功');
         isReadonly.value = true;
-        await fetchEventDetail(); // 更新後重新拉資料
+        await fetchEventDetail(); 
       } else {
         throw new Error(res?.msg || res?.message || '更新失敗');
       }
@@ -165,12 +163,7 @@ export function useDetailForm(formRef: any) {
   function generatePreviewHtml() {
     const banner = form.img_url || '/event_default.png';
     const typeMap: Record<string, string> = {
-      '0': '會議',
-      '1': '工作坊',
-      '2': '記者會',
-      '3': '標準制定會議',
-      '4': '創意競賽',
-      '5': '其他活動',
+      '0': '會議', '1': '工作坊', '2': '記者會', '3': '標準制定會議', '4': '創意競賽', '5': '其他活動',
     };
     const typeName = typeMap[String(form.activity_type)] || '-';
 

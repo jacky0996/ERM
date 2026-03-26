@@ -208,7 +208,7 @@ catalogs:
       specifier: ^16.6.1
       version: 16.6.1
     echarts:
-      specifier: ^6.0.0
+      specifier: 'catalog:'
       version: 6.0.0
     element-plus:
       specifier: ^2.13.1
@@ -738,6 +738,9 @@ importers:
       dayjs:
         specifier: 'catalog:'
         version: 1.11.19
+      echarts:
+        specifier: 'catalog:'
+        version: 6.0.0
       element-plus:
         specifier: 'catalog:'
         version: 2.13.2(vue@3.5.27(typescript@5.9.3))
@@ -12838,6 +12841,8 @@ snapshots:
       '@ckeditor/ckeditor5-ui': 47.6.0
       '@ckeditor/ckeditor5-utils': 47.6.0
       ckeditor5: 47.6.0
+    transitivePeerDependencies:
+      - supports-color
 
   '@ckeditor/ckeditor5-heading@47.6.0':
     dependencies:
@@ -12870,6 +12875,8 @@ snapshots:
       '@ckeditor/ckeditor5-utils': 47.6.0
       '@ckeditor/ckeditor5-widget': 47.6.0
       ckeditor5: 47.6.0
+    transitivePeerDependencies:
+      - supports-color
 
   '@ckeditor/ckeditor5-html-embed@47.6.0':
     dependencies:
@@ -12879,6 +12886,8 @@ snapshots:
       '@ckeditor/ckeditor5-utils': 47.6.0
       '@ckeditor/ckeditor5-widget': 47.6.0
       ckeditor5: 47.6.0
+    transitivePeerDependencies:
+      - supports-color
 
   '@ckeditor/ckeditor5-html-support@47.6.0':
     dependencies:
@@ -13018,6 +13027,8 @@ snapshots:
       '@ckeditor/ckeditor5-utils': 47.6.0
       ckeditor5: 47.6.0
       es-toolkit: 1.39.5
+    transitivePeerDependencies:
+      - supports-color
 
   '@ckeditor/ckeditor5-minimap@47.6.0':
     dependencies:

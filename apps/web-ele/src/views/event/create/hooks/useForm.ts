@@ -20,6 +20,8 @@ export function useForm(formRef: any) {
     address: '',
     img_url: '/event_default.png',
     content: '',
+    is_registration: false,
+    is_approval: false,
   });
 
   const bannerPreviewUrl = ref<string>('/event_default.png');
@@ -66,16 +68,16 @@ export function useForm(formRef: any) {
     try {
       await formRef.value?.validate();
       
-      // 取得全域儲存的使用者資訊
       const userInfo: any = userStore.userInfo || {};
       
-      // 組合要發送給後端的 payload，不送出 event_number
       const { event_number, ...formWithoutNumber } = form;
       const payload = {
         ...formWithoutNumber,
         type: form.activity_type, 
         user_id: userInfo?.id || userInfo?.userId || '', 
         creator_name: userInfo?.realName || userInfo?.username || '', 
+        is_registration: form.is_registration ? 1 : 0,
+        is_approval: form.is_approval ? 1 : 0,
       };
       
       const res: any = await requestClient.post('/edm/event/create', payload, {
@@ -90,7 +92,11 @@ export function useForm(formRef: any) {
       }
     } catch (error: any) {
       console.error(error);
-      ElMessage.error(error.message || '請確認表單位填寫正確');
+      if (error && typeof error === 'object' && !error.message) {
+         ElMessage.warning('請檢查表單必填項是否正確填寫');
+      } else {
+         ElMessage.error(error.message || '連線異常，請稍後再試');
+      }
     }
   }
 
@@ -105,12 +111,7 @@ export function useForm(formRef: any) {
   function generatePreviewHtml() {
     const banner = form.img_url || '/event_default.png';
     const typeMap: Record<string, string> = {
-      '0': '會議',
-      '1': '工作坊',
-      '2': '記者會',
-      '3': '標準制定會議',
-      '4': '創意競賽',
-      '5': '其他活動',
+      '0': '會議', '1': '工作坊', '2': '記者會', '3': '標準制定會議', '4': '創意競賽', '5': '其他活動',
     };
     const typeName = typeMap[String(form.activity_type)] || '-';
 

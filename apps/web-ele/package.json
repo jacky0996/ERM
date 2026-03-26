@@ -58,6 +58,7 @@
     "@vueuse/core": "catalog:",
     "ckeditor5": "47.6.0",
     "dayjs": "catalog:",
+    "echarts": "catalog:",
     "element-plus": "catalog:",
     "mermaid": "^11.13.0",
     "pinia": "catalog:",

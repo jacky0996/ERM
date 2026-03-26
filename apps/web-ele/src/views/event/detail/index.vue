@@ -19,6 +19,7 @@ import {
   ElRadioGroup,
   ElSelect,
   ElOption,
+  ElSwitch,
 } from 'element-plus';
 
 // Hooks (重用列表元件或新寫的 hook)
@@ -26,6 +27,10 @@ import { useDetailForm } from './hooks/useDetailForm';
 
 // 子元件
 import InvitationList from './components/InvitationList.vue';
+import RegistrationForm from './components/RegistrationForm.vue';
+import ApprovalList from './components/ApprovalList.vue';
+import EventAnalytics from './components/EventAnalytics.vue';
+import SurveyForm from './components/SurveyForm.vue';
 
 // 注意：若 useCkeditor 在 create 內，建議移出共用，此處暫以相對路徑或重寫處理。
 // 為了避免路徑混淆，臨時引入原本的 (假設能正確解析，若報錯後續再修正)
@@ -164,6 +169,17 @@ function updateIframeHeight(e: any) {
                   />
                 </ElFormItem>
 
+                <!-- 報名表與審核設定 -->
+                <div class="grid grid-cols-2 gap-4 bg-gray-50/50 p-4 rounded-xl border border-dashed border-gray-200 mb-6 font-bold">
+                  <ElFormItem label="是否需要報名表" prop="is_registration" class="mb-0 text-primary">
+                    <ElSwitch v-model="form.is_registration" :disabled="isReadonly" />
+                  </ElFormItem>
+
+                  <ElFormItem v-if="form.is_registration" label="報名表是否需要審核" prop="is_approval" class="mb-0 text-primary">
+                    <ElSwitch v-model="form.is_approval" :disabled="isReadonly" />
+                  </ElFormItem>
+                </div>
+
                 <!-- 活動簡介 -->
                 <ElFormItem label="活動簡介" prop="summary" required>
                   <ElInput
@@ -260,8 +276,11 @@ function updateIframeHeight(e: any) {
 
           <!-- ===== 2. 報名表 ===== -->
           <el-tab-pane label="報名表" name="registration">
-            <div class="py-10">
-              <ElEmpty description="報名表功能建置中" />
+            <div class="py-6">
+              <RegistrationForm 
+                v-if="activeTab === 'registration' && form.id"
+                :event-data="form"
+              />
             </div>
           </el-tab-pane>
 
@@ -277,22 +296,31 @@ function updateIframeHeight(e: any) {
 
           <!-- ===== 4. 審核名單 ===== -->
           <el-tab-pane label="審核名單" name="approval">
-            <div class="py-10">
-              <ElEmpty description="審核名單功能建置中" />
+            <div class="py-6">
+              <ApprovalList
+                v-if="activeTab === 'approval' && form.id"
+                :event-id="form.id"
+              />
             </div>
           </el-tab-pane>
 
           <!-- ===== 5. 問券 ===== -->
           <el-tab-pane label="問券" name="survey">
-            <div class="py-10">
-              <ElEmpty description="問券功能建置中" />
+            <div class="py-6">
+              <SurveyForm
+                v-if="activeTab === 'survey' && form.id"
+                :event-data="form"
+              />
             </div>
           </el-tab-pane>
 
           <!-- ===== 6. 活動分析 ===== -->
           <el-tab-pane label="活動分析" name="analytics">
-            <div class="py-10">
-              <ElEmpty description="活動分析功能建置中" />
+            <div class="py-6">
+              <EventAnalytics
+                v-if="activeTab === 'analytics' && form.id"
+                :event-id="form.id"
+              />
             </div>
           </el-tab-pane>
 
@@ -303,12 +331,6 @@ function updateIframeHeight(e: any) {
             </div>
           </el-tab-pane>
 
-          <!-- ===== 8. 審核通知 ===== -->
-          <el-tab-pane label="審核通知" name="notify">
-            <div class="py-10">
-              <ElEmpty description="審核通知功能建置中" />
-            </div>
-          </el-tab-pane>
 
           <!-- ===== 9. 設定 ===== -->
           <el-tab-pane label="設定" name="settings">
