@@ -4,7 +4,8 @@ ENV PNPM_HOME="/pnpm"
 ENV PATH="$PNPM_HOME:$PATH"
 ENV TZ=Asia/Taipei
 
-RUN npm i -g corepack
+# 啟用內建 corepack (避開外部 npm 安裝防止 timeout)
+RUN corepack enable && corepack prepare pnpm@10.4.0 --activate
 
 WORKDIR /app
 

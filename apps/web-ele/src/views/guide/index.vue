@@ -22,7 +22,21 @@ import { Page } from '@vben/common-ui';
           <div class="font-bold text-lg">📝 專案開發日誌 (Development Log)</div>
         </template>
         <div class="text-sm text-gray-700 leading-relaxed space-y-3">
-          <h3 class="font-bold text-base text-blue-600 border-b pb-1">當週交付價值 (3/16～3/20)</h3>
+          <h3 class="font-bold text-base text-blue-600 border-b pb-1">當週交付價值 (3/23～3/27)</h3>
+          <ul class="list-disc pl-5 space-y-1 mb-4">
+            <li><strong>人員管理優化：</strong>實作業務人員自動綁定機制，支援 Excel 匯入時透過「工號」自動勾稽關聯。</li>
+            <li><strong>後端環境與基礎設施：</strong>完成 EDM 後端專案初始化、Docker 容器化佈署、主機環境設定及防火牆規則配置。</li>
+            <li><strong>活動詳細頁面開發：</strong>完成報名表配置介面、審核名單流程管理、以及活動分析數據視覺化（ECharts 整合）之靜態畫面。</li>
+            <li><strong>Docker 建置優化：</strong>修正 Dockerfile 指令，解決核心工具安裝時的網路逾時報錯，提升編譯效率。</li>
+          </ul>
+
+          <h3 class="font-bold text-base text-blue-600 border-b pb-1 mt-4">下週預計交付</h3>
+          <ol class="list-decimal pl-5 space-y-1 mb-6">
+            <li><strong>發信系統核心開發：</strong>實作寄信功能（含 Proxy 設定與郵件圖片外部呈現之資安處理）。</li>
+            <li><strong>環境遷移與同步：</strong>將現有後端 API、DB 連線及資料完整搬移至全新測試主機。</li>
+          </ol>
+
+          <h3 class="font-bold text-base text-blue-600 border-b pb-1 mt-4">當週交付價值 (3/16～3/20)</h3>
           <ul class="list-disc pl-5 space-y-1 mb-4">
             <li><strong>活動管理功能製作：</strong>完成活動列表(搜尋/分頁)、活動詳情(分頁標籤)以及活動內容預覽功能。</li>
             <li><strong>預覽功能製作：</strong>完成 Gmail 風格之「活動預覽」功能，支援電腦版與手機版介面即時切換。</li>
@@ -30,12 +44,6 @@ import { Page } from '@vben/common-ui';
             <li><strong>系統架構文件化：</strong>於系統內建立 UML 流程圖（人員、群組、活動、SSO）及測試項目驗證指南。</li>
             <li><strong>UX 穩定性優化：</strong>修復 Vue Router 換頁不重置組件的問題、優化分頁器排版、開放側邊欄權限限制以利測試。</li>
           </ul>
-
-          <h3 class="font-bold text-base text-blue-600 border-b pb-1 mt-4">下週預計交付</h3>
-          <ol class="list-decimal pl-5 space-y-1 mb-6">
-            <li>撰寫寄信功能(含proxy設定,圖片外部呈現資安問題處理)</li>
-            <li>獨立主機重新架設前後端,DB建立(皆容器化)</li>
-          </ol>
 
           <h3 class="font-bold text-base text-blue-600 border-b pb-1">當週交付價值 (3/9～3/13)</h3>
           <ul class="list-disc pl-5 space-y-1 mb-4">
@@ -83,6 +91,7 @@ import { Page } from '@vben/common-ui';
             <li>商機相關需求(預計 EDM 系統完成後執行)</li>
             <li>行業別要智能提供 (預計 EDM 系統完成後執行)</li>
             <li>Dashboard 功能設計 (預計 EDM 系統完成後執行)</li>
+            <li>系統分級、防護基準、威脅建模(預計 EDM 系統完成後執行)</li>
           </ul>
         </div>
       </el-card>
