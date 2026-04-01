@@ -88,46 +88,48 @@ export const useAuthStore = defineStore('auth', () => {
    * 處理 SSO 登入 (Token 交換)
    * @param token 來自 URL 的 SSO Token
    */
+  /**
+   * 處理 SSO 登入 (Token 交換)
+   * @param token 來自 URL 的 SSO Token
+   */
   async function ssoLogin(token: string) {
-    const maxRetries = 10;
-    const retryInterval = 1000; // 已完成排障，改回 1 秒 (或更高，視伺服器反應時間而定)
-    let retryCount = 0;
+    try {
+      loginLoading.value = true;
+      // 這裡回傳的是整包 JSON (因為 requestClient 設定了 responseReturn: 'raw')
+      const res: any = await verifySsoTokenApi(token);
 
-    while (retryCount < maxRetries) {
-      try {
-        loginLoading.value = true;
-        const { accessToken, userInfo } = await verifySsoTokenApi(token);
+      // 直接檢查大包 JSON (code: 0 或 success: true，且必須有 accessToken)
+      if (res && (res.code === 0 || res.success) && res.accessToken) {
+        // 儲存由核心系統簽發的 JWT Token
+        accessStore.setAccessToken(res.accessToken);
 
-        if (accessToken) {
-          // 儲存 Token
-          accessStore.setAccessToken(accessToken);
-          // 儲存使用者資訊
-          userStore.setUserInfo(userInfo);
+        // 整理使用者資訊
+        const userInfo = res.data;
+        userStore.setUserInfo({
+          userId:     String(userInfo.uid),
+          username:   userInfo.name,
+          realName:   userInfo.name,
+          email:      userInfo.email,
+          department: userInfo.department,
+          avatar:     '',
+          roles:      [],
+        });
 
-          // 紀錄最後活動時間 (Session 續期用)
-          localStorage.setItem('edm_last_activity', Date.now().toString());
-
-          // ⚠️ 暫時不呼叫權限碼 API，直接進入系統
-          // const accessCodes = await getAccessCodesApi();
-          // accessStore.setAccessCodes(accessCodes);
-
-          console.log('[SSO] 驗證成功，進入系統。');
-          return true;
-        }
-      } catch (error: any) {
-        retryCount++;
-        console.error(`[SSO] 驗證失敗 (嘗試 ${retryCount}):`, error);
-
-        if (retryCount < maxRetries) {
-          await new Promise((resolve) => setTimeout(resolve, retryInterval));
-        }
-      } finally {
-        loginLoading.value = false;
+        // 紀錄活動時間與日誌
+        localStorage.setItem('edm_last_activity', Date.now().toString());
+        console.log('[SSO] 驗證成功，進入系統。');
+        return true;
       }
+      
+      throw new Error('未取得授權回傳或回傳碼錯誤');
+    } catch (error: any) {
+      console.error('[SSO] 驗證過程出錯：', error);
+      // 如果暫時沒有 ElMessage，可以用 console.error 或是 alert 替代，
+      // 但強烈建議後續加上通知 UI。
+      return false;
+    } finally {
+      loginLoading.value = false;
     }
-
-    console.error('[SSO] 已達到最大重試次數，驗證失敗。');
-    return false;
   }
 
   async function logout(redirect: boolean = true) {

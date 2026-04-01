@@ -19,7 +19,14 @@ import { useAuthStore } from '#/store';
 
 import { refreshTokenApi } from './core';
 
-const { apiURL } = useAppConfig(import.meta.env, import.meta.env.PROD);
+const { apiURL: originalApiURL } = useAppConfig(import.meta.env, import.meta.env.PROD);
+
+// --- [API 分流設定] ---
+// 1. 一般業務網址：UAT/正式環境強制走相對路徑 /api/ (隱藏實體 IP)
+const apiURL = import.meta.env.DEV ? originalApiURL : '/api/';
+
+// 2. SSO 核心驗證網址：直接從環境變數讀取 (核心系統位址)
+const ssoApiURL = (import.meta.env.VITE_SSO_VERIFY_URL as string) || apiURL;
 
 interface AdditionalOptions {
   skipAuthenticate?: boolean;
@@ -114,15 +121,25 @@ function createRequestClient(
   return client;
 }
 
+/**
+ * 一般業務請求客戶端 (經由中繼站)
+ */
 export const requestClient = createRequestClient(apiURL, {
   responseReturn: 'data',
 });
 
 /**
+ * 專屬 SSO 驗證客戶端 (直連核心系統，accessToken 在外層)
+ */
+export const ssoRequestClient = createRequestClient(ssoApiURL, {
+  responseReturn: 'raw',   // ✅ 必定使用 RAW 以讀取外層 accessToken
+  skipAuthenticate: true, // ✅ 跳過自動登出邏輯
+});
+
+/**
  * 基礎請求客戶端 (不包含 401 自動登出邏輯)
- * 用於 SSO 驗證、登出等不希望觸發全域引導的場景
  */
 export const baseRequestClient = createRequestClient(apiURL, {
   responseReturn: 'data',
-  skipAuthenticate: true, // ✅ 跳過自動登出邏輯
+  skipAuthenticate: true,
 });

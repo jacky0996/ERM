@@ -1,4 +1,4 @@
-import { baseRequestClient, requestClient } from '#/api/request';
+import { baseRequestClient, requestClient, ssoRequestClient } from '#/api/request';
 
 export namespace AuthApi {
   /** 登入參數 */
@@ -61,7 +61,7 @@ export async function getAccessCodesApi() {
  * 使用 baseRequestClient 以避免在 Token 過期時觸發全域 401 登出
  */
 export async function verifySsoTokenApi(token: string) {
-  return baseRequestClient.post<AuthApi.SsoResult>('/edm/sso/verify-token', {
+  return ssoRequestClient.post<AuthApi.SsoResult>('/edm/sso/verify-token', {
     token,
   });
 }

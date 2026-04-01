@@ -10,6 +10,15 @@ services:
     restart: always
     networks:
       - edm-network
+    # --- [資安隔離] 建立別名，隱藏中繼站實體 IP (192.168.3.19) ---
+    extra_hosts:
+      - "sso-proxy-backend:192.168.3.19"
+    # 健康檢查
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
 
 networks:
   edm-network:
