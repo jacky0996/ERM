@@ -85,51 +85,61 @@ export const useAuthStore = defineStore('auth', () => {
   }
 
   /**
-   * 處理 SSO 登入 (Token 交換)
-   * @param token 來自 URL 的 SSO Token
-   */
-  /**
-   * 處理 SSO 登入 (Token 交換)
+   * 處理 SSO 登入 (Token 交換) - 安全重試 10 次版
    * @param token 來自 URL 的 SSO Token
    */
   async function ssoLogin(token: string) {
-    try {
-      loginLoading.value = true;
-      // 這裡回傳的是整包 JSON (因為 requestClient 設定了 responseReturn: 'raw')
-      const res: any = await verifySsoTokenApi(token);
+    const maxRetries = 10;
+    const retryInterval = 1000;
+    let retryCount = 0;
 
-      // 直接檢查大包 JSON (code: 0 或 success: true，且必須有 accessToken)
-      if (res && (res.code === 0 || res.success) && res.accessToken) {
-        // 儲存由核心系統簽發的 JWT Token
-        accessStore.setAccessToken(res.accessToken);
+    while (retryCount < maxRetries) {
+      try {
+        loginLoading.value = true;
+        const res: any = await verifySsoTokenApi(token);
+        console.log('[SSO Debug] 原始回傳內容：', res);
 
-        // 整理使用者資訊
-        const userInfo = res.data;
-        userStore.setUserInfo({
-          userId:     String(userInfo.uid),
-          username:   userInfo.name,
-          realName:   userInfo.name,
-          email:      userInfo.email,
-          department: userInfo.department,
-          avatar:     '',
-          roles:      [],
-        });
+        // --- 多層級相容性處理 ---
+        // 1. 判斷是否為 Axios Response 物件 (如果是，取其 .data)
+        const jsonRoot = res?.status !== undefined ? res.data : res;
+        
+        // 2. 判斷 payload 位址 (有些結構會把 Token 放在 jsonRoot.data 裡面)
+        const payload = (jsonRoot?.data?.accessToken) ? jsonRoot.data : jsonRoot;
 
-        // 紀錄活動時間與日誌
-        localStorage.setItem('edm_last_activity', Date.now().toString());
-        console.log('[SSO] 驗證成功，進入系統。');
-        return true;
+        // 成功判定：檢查 code 是否為 0 且 payload 裡擁有 accessToken
+        if (jsonRoot && jsonRoot.code === 0 && payload?.accessToken) {
+          accessStore.setAccessToken(payload.accessToken);
+
+          // 從 payload 抓取使用者資訊
+          const userInfo = payload.userInfo || payload.data?.userInfo;
+          
+          if (userInfo) {
+            userStore.setUserInfo({
+              ...userInfo,
+              username: userInfo.realName || userInfo.name || 'User',
+            });
+
+            localStorage.setItem('edm_last_activity', Date.now().toString());
+            console.log(`[SSO] 驗證成功 (第 ${retryCount + 1} 次嘗試)`);
+            return true;
+          }
+          throw new Error('回傳中找不到使用者資訊 (userInfo)');
+        }
+        
+        throw new Error(`驗證未通過 (Code: ${jsonRoot?.code}, Message: ${jsonRoot?.message})`);
+      } catch (error: any) {
+        retryCount++;
+        console.warn(`[SSO] 驗證失敗 (嘗試 ${retryCount}/${maxRetries}):`, error.message || error);
+
+        if (retryCount >= maxRetries) {
+          return false;
+        }
+        await new Promise((resolve) => setTimeout(resolve, retryInterval));
+      } finally {
+        loginLoading.value = false;
       }
-      
-      throw new Error('未取得授權回傳或回傳碼錯誤');
-    } catch (error: any) {
-      console.error('[SSO] 驗證過程出錯：', error);
-      // 如果暫時沒有 ElMessage，可以用 console.error 或是 alert 替代，
-      // 但強烈建議後續加上通知 UI。
-      return false;
-    } finally {
-      loginLoading.value = false;
     }
+    return false;
   }
 
   async function logout(redirect: boolean = true) {

@@ -13,17 +13,23 @@ export default defineConfig(async () => {
       ],
       server: {
         proxy: {
+          // SSO 驗證專用轉發 (本地模擬 UAT)
+          '/api-sso': {
+            changeOrigin: true,
+            rewrite: (path) => path.replace(/^\/api-sso/, '/api'),
+            target: 'https://uathws.hwacom.com',
+            ws: true,
+          },
           '/api/edm': {
             changeOrigin: true,
             rewrite: (path) => path.replace(/^\/api\/edm/, '/api/edm'),
-            target: 'http://127.0.0.1:8000',
+            target: 'http://uatedmapi.hwacom.com',
             ws: true,
           },
           '/api': {
             changeOrigin: true,
             rewrite: (path) => path.replace(/^\/api/, ''),
-            // mock代理地址
-            target: 'http://localhost:5320/api',
+            target: 'http://uatedmapi.hwacom.com/api',
             ws: true,
           },
         },
