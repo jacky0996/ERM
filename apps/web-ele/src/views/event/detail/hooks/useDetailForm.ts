@@ -26,8 +26,8 @@ export function useDetailForm(formRef: any) {
     address: '',
     img_url: '/event_default.png',
     content: '',
-    is_registration: false,
-    is_approval: false,
+    is_registration: 0,
+    is_approve: 0,
   });
 
   const bannerPreviewUrl = ref<string>('/event_default.png');
@@ -65,9 +65,9 @@ export function useDetailForm(formRef: any) {
       form.img_url = detail.img_url || detail.banner_url || '/event_default.png';
       form.content = detail.content || '';
       
-      // 轉換數據格式 (1/0 -> Boolean)
-      form.is_registration = detail.is_registration === 1;
-      form.is_approval = detail.is_approval === 1;
+      // 轉換數據格式 (因應後端 GET 回傳為 is_display，但 UPDATE 接收 is_registration)
+      form.is_registration = detail.is_display !== undefined ? detail.is_display : 0;
+      form.is_approve = detail.is_approve !== undefined ? detail.is_approve : 0;
 
       bannerPreviewUrl.value = form.img_url;
     } catch (error) {
@@ -132,8 +132,8 @@ export function useDetailForm(formRef: any) {
         ...formWithoutNumber,
         type: form.activity_type,
         updater_id: userInfo?.id || userInfo?.userId || '',
-        is_registration: form.is_registration ? 1 : 0,
-        is_approval: form.is_approval ? 1 : 0,
+        is_registration: form.is_registration,
+        is_approve: form.is_approve,
       };
       
       const res: any = await updateEventApi(payload);

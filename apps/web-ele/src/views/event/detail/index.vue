@@ -31,6 +31,7 @@ import RegistrationForm from './components/RegistrationForm.vue';
 import ApprovalList from './components/ApprovalList.vue';
 import EventAnalytics from './components/EventAnalytics.vue';
 import SurveyForm from './components/SurveyForm.vue';
+import ThankyouForm from './components/ThankyouForm.vue';
 
 // 注意：若 useCkeditor 在 create 內，建議移出共用，此處暫以相對路徑或重寫處理。
 // 為了避免路徑混淆，臨時引入原本的 (假設能正確解析，若報錯後續再修正)
@@ -170,13 +171,42 @@ function updateIframeHeight(e: any) {
                 </ElFormItem>
 
                 <!-- 報名表與審核設定 -->
-                <div class="grid grid-cols-2 gap-4 bg-gray-50/50 p-4 rounded-xl border border-dashed border-gray-200 mb-6 font-bold">
+                <div class="grid grid-cols-2 gap-4 bg-blue-50/30 p-6 rounded-2xl border border-blue-100 mb-6 font-bold">
                   <ElFormItem label="是否需要報名表" prop="is_registration" class="mb-0 text-primary">
-                    <ElSwitch v-model="form.is_registration" :disabled="isReadonly" />
+                    <template #label>
+                      <span class="flex items-center gap-2">
+                        <ElIcon><svg viewBox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg"><path fill="currentColor" d="M128 832V128h640v192h192v512H128zm640-512H512V128H192v640h704V320H768z"></path></svg></ElIcon>
+                        是否需要報名表
+                      </span>
+                    </template>
+                    <ElSwitch 
+                      v-model="form.is_registration" 
+                      :active-value="1" 
+                      :inactive-value="0"
+                      active-text="需報名"
+                      inactive-text="不需報名"
+                      inline-prompt
+                      :disabled="isReadonly" 
+                    />
                   </ElFormItem>
 
-                  <ElFormItem v-if="form.is_registration" label="報名表是否需要審核" prop="is_approval" class="mb-0 text-primary">
-                    <ElSwitch v-model="form.is_approval" :disabled="isReadonly" />
+                  <ElFormItem v-if="form.is_registration === 1" label="報名人員需審核" prop="is_approve" class="mb-0 text-orange-600">
+                    <template #label>
+                      <span class="flex items-center gap-2 text-orange-600">
+                        <ElIcon><svg viewBox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg"><path fill="currentColor" d="M512 512a160 160 0 1 0 0-320 160 160 0 0 0 0 320zm0 64a256 256 0 1 1 0-512 256 256 0 0 1 0 512zm320 320v-32a96 96 0 0 0-96-96H288a96 96 0 0 0-96 96v32a32 32 0 1 1-64 0v-32a160 160 0 0 1 160-160h448a160 160 0 0 1 160 160v32a32 32 0 1 1-64 0z"></path></svg></ElIcon>
+                        報名人員需審核
+                      </span>
+                    </template>
+                    <ElSwitch 
+                      v-model="form.is_approve" 
+                      :active-value="1" 
+                      :inactive-value="0"
+                      active-text="需審核"
+                      inactive-text="免審核"
+                      inline-prompt
+                      active-color="#ea580c"
+                      :disabled="isReadonly" 
+                    />
                   </ElFormItem>
                 </div>
 
@@ -326,8 +356,11 @@ function updateIframeHeight(e: any) {
 
           <!-- ===== 7. 感謝函 ===== -->
           <el-tab-pane label="感謝函" name="thankyou">
-            <div class="py-10">
-              <ElEmpty description="感謝函功能建置中" />
+            <div class="py-6">
+              <ThankyouForm
+                v-if="activeTab === 'thankyou' && form.id"
+                :event-data="form"
+              />
             </div>
           </el-tab-pane>
 

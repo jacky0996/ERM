@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, reactive, onMounted } from 'vue';
+import { ref, reactive, onMounted, watch } from 'vue';
 import {
   ElButton,
   ElCard,
@@ -8,12 +8,14 @@ import {
   ElForm,
   ElFormItem,
   ElInput,
-  ElDivider,
   ElMessage,
   ElMessageBox,
+  ElEmpty,
+  ElTable,
+  ElTableColumn,
+  ElSwitch,
   ElSelect,
   ElOption,
-  ElSwitch,
 } from 'element-plus';
 import { requestClient } from '#/api/request';
 
@@ -22,15 +24,16 @@ const props = defineProps<{
 }>();
 
 const loading = ref(false);
-const isCreated = ref(false); 
+const isDisplay = ref(true); 
+const isCreatedOrBound = ref(false);
 const formUrl = ref('');
-const editUrl = ref('');
+const displayList = ref<any[]>([]);
 
-// 配置資料
+// --- 問卷配置器狀態 (恢復) ---
 const config = reactive({
   title: props.eventData?.title || '活動報名表',
   description: props.eventData?.summary || '感謝您參加本活動，請填寫以下報名資訊。',
-  standardFields: ['name', 'mobile', 'email'],
+  standardFields: ['name', 'mobile', 'email', 'company'],
   customQuestions: [] as any[]
 });
 
@@ -44,8 +47,6 @@ const typeOptions = [
   { label: '時間 (Time)', value: 'time' },
 ];
 
-const hasOptions = (type: string) => ['radio', 'checkbox', 'dropdown'].includes(type);
-
 const fieldOptions = [
   { label: '姓名', value: 'name', disabled: true },
   { label: '行動電話', value: 'mobile', disabled: true },
@@ -55,216 +56,261 @@ const fieldOptions = [
   { label: '餐旅需求', value: 'dietary' },
 ];
 
+const hasOptions = (type: string) => ['radio', 'checkbox', 'dropdown'].includes(type);
+
 onMounted(() => {
-  if (props.eventData?.google_form_url) {
-    formUrl.value = props.eventData.google_form_url;
-    isCreated.value = true;
-  }
+  checkDisplayAndLoad();
 });
 
-function openExternalLink(url: string) {
-  if (url) window.open(url, '_blank');
-}
+watch(() => props.eventData?.id, () => {
+  checkDisplayAndLoad();
+});
 
-function addQuestion() {
-  config.customQuestions.push({ 
-    label: '', 
-    type: 'text', 
-    required: false, 
-    options: [] 
-  });
-}
+async function checkDisplayAndLoad() {
+  if (!props.eventData?.id) return;
+  
+  // 檢查是否開啟報名表 (對位新的參數 is_registration)
+  if (props.eventData.is_registration === 0) {
+    isDisplay.value = false;
+    return;
+  }
 
-function removeQuestion(index: number) {
-  config.customQuestions.splice(index, 1);
-}
-
-function addSubOption(qIdx: number) {
-  config.customQuestions[qIdx].options.push('');
-}
-
-async function handleCreateForm() {
+  isDisplay.value = true;
+  loading.value = true;
   try {
-    if (!props.eventData?.id) {
-       ElMessage.error('活動資訊不完整，無法產製表單');
-       return;
+    const res: any = await requestClient.post('/edm/event/getDisplayList', {
+      event_id: props.eventData.id
+    }, { responseReturn: 'raw' });
+
+    const body = res?.data || res || {};
+
+    if (body.code === 1) {
+      isDisplay.value = false;
+      return;
     }
 
-    await ElMessageBox.confirm('將依據目前配置產製 Google 表單，產製後會自動綁定至此活動。確定執行？', '產製表單', {
+    const sheetData = body.data || {};
+    const url = sheetData.url || sheetData.form_url || sheetData.sheet_url || '';
+    
+    if (url) {
+      formUrl.value = url;
+      isCreatedOrBound.value = true;
+    } else {
+      isCreatedOrBound.value = false;
+    }
+
+    displayList.value = body.list || sheetData.list || [];
+  } catch (error) {
+    console.warn('Load failed', error);
+  } finally {
+    loading.value = false;
+  }
+}
+
+// --- 動作：產製 Google 表單 ---
+async function handleCreateForm() {
+  try {
+    await ElMessageBox.confirm('將依據目前配置產製 Google 表單並自動綁定。確定執行？', '產製表單', {
       confirmButtonText: '確定',
       cancelButtonText: '取消',
       type: 'primary'
     });
     
     loading.value = true;
-    
-    const res: any = await requestClient.post('/edm/event/createGoogleForm', {
+    await requestClient.post('/edm/event/createGoogleForm', {
       event_id: props.eventData.id,
+      type: 'registration',
       config: config
-    }, {
-      responseReturn: 'body'
     });
 
-    if (res && (res.code === 200 || res.code === 0 || res.status === true)) {
-      isCreated.value = true;
-      formUrl.value = res.data?.view_url || '';
-      editUrl.value = res.data?.edit_url || '';
-      ElMessage.success('Google 表單產製成功！');
-    } else {
-      throw new Error(res?.msg || '產製失敗，請檢查權限設定');
-    }
+    // 只要沒進入 catch，就代表執行成功
+    ElMessage.success('產製成功');
+    // 重新執行一次讀取報名表的 api 並進行畫面的刷新
+    await checkDisplayAndLoad();
   } catch (error: any) {
-    if (error !== 'cancel') {
-       ElMessage.error(error.message || '產製過程發生異常');
-    }
+    if (error !== 'cancel') ElMessage.error(error.message || '產製失敗');
   } finally {
     loading.value = false;
   }
 }
+
+// --- 動作：手動更新/刪除網址 ---
+async function handleDeleteUrl() {
+  await ElMessageBox.confirm('確定刪除綁定？此操作不會刪除雲端表單實體。', '警告', { type: 'warning' });
+  loading.value = true;
+  try {
+    await requestClient.post('/edm/event/updateDisplay', { event_id: props.eventData.id, url: '' });
+    formUrl.value = '';
+    isCreatedOrBound.value = false;
+    ElMessage.success('已解除綁定');
+  } finally { loading.value = false; }
+}
+
+function handleCopy() {
+  navigator.clipboard.writeText(formUrl.value).then(() => ElMessage.success('已複製連結'));
+}
+
+// --- 問卷配置器子動作 ---
+function addQuestion() {
+  config.customQuestions.push({ label: '', type: 'text', required: false, options: [''] });
+}
 </script>
 
 <template>
-  <div class="registration-form-config p-4 bg-white rounded-2xl">
+  <div v-loading="loading" class="registration-form-container p-2">
     
-    <div v-if="!isCreated" class="space-y-6 animate-fade-in">
-      <!-- 標題與描述 -->
-      <ElCard shadow="never" class="!rounded-2xl border-gray-200 bg-gray-50/50">
-        <template #header><span class="font-bold text-gray-800">1. Google 表單基本內容</span></template>
-        <ElForm label-position="top">
-          <ElFormItem label="表單主標題" class="!mb-6">
-             <template #label><span class="font-semibold text-gray-700">表單主標題</span></template>
-             <ElInput v-model="config.title" placeholder="請輸入標題" />
-          </ElFormItem>
-          <ElFormItem label="表單介紹說明">
-             <template #label><span class="font-semibold text-gray-700">表單介紹說明</span></template>
-             <ElInput v-model="config.description" type="textarea" :rows="3" placeholder="請輸入表單說明文字" />
-          </ElFormItem>
-        </ElForm>
-      </ElCard>
+    <!-- 情境 1: 活動不需填寫報名表 -->
+    <div v-if="!isDisplay" class="py-20 flex justify-center bg-white rounded-2xl shadow-sm border border-gray-100">
+      <ElEmpty description="此活動目前設定為：不需報名表" />
+    </div>
 
-      <!-- 欄位設定 -->
-      <ElCard shadow="never" class="!rounded-2xl border-gray-200">
-        <template #header><span class="font-bold text-gray-800">2. 報名資料與自訂問項</span></template>
-        <div class="mb-4">
-          <p class="text-xs font-bold text-gray-900 mb-3 uppercase tracking-wider">標配基本欄位</p>
-          <ElCheckboxGroup v-model="config.standardFields" class="grid grid-cols-2 md:grid-cols-3 gap-3">
-            <ElCheckbox 
-              v-for="field in fieldOptions" 
-              :key="field.value" 
-              :label="field.label" 
-              :value="field.value" 
-              :disabled="field.disabled" 
-              border 
-              class="!mr-0 w-full"
-            />
-          </ElCheckboxGroup>
-        </div>
-        
-        <ElDivider border-style="dashed"><span class="text-gray-400 font-normal px-4">自訂申報問項區</span></ElDivider>
-        
-        <div class="space-y-6 mt-6">
-          <div v-for="(q, index) in config.customQuestions" :key="index" class="question-card p-6 bg-white rounded-xl relative border-2 border-gray-100 hover:border-blue-400 transition-colors shadow-sm">
-            <div class="flex flex-wrap gap-6 items-start">
-              <div class="flex-1 min-w-[300px]">
-                <label class="text-sm font-bold text-gray-800 block mb-2">題目：</label>
-                <ElInput v-model="q.label" placeholder="例如：請問您從何處得知本活動？" class="title-input" />
+    <!-- 情境 2: 報名表管理介面 -->
+    <div v-else class="space-y-6">
+      
+      <!-- A. 頂部狀態列 (已產製時顯示管理清單，未產製時顯示配置入口) -->
+      <div v-if="isCreatedOrBound" class="animate-fade-in">
+        <ElCard shadow="never" class="!rounded-2xl border-gray-200 bg-gray-900 border-l-[6px] border-emerald-500">
+          <div class="flex flex-wrap items-center justify-between gap-4">
+            <div class="flex items-center gap-4">
+              <div class="w-12 h-12 bg-emerald-500/20 text-emerald-400 rounded-xl flex items-center justify-center border border-emerald-500/30">
+                <svg viewBox="0 0 24 24" width="24" height="24"><path fill="currentColor" d="M21,7L9,19L3.5,13.5L4.91,12.09L9,16.17L19.59,5.59L21,7Z" /></svg>
               </div>
-              <div class="w-64">
-                <label class="text-sm font-bold text-gray-800 block mb-2">問項類型：</label>
-                <ElSelect v-model="q.type" class="w-full">
-                  <ElOption v-for="opt in typeOptions" :key="opt.value" :label="opt.label" :value="opt.value" />
-                </ElSelect>
+              <div class="flex flex-col">
+                <span class="text-white font-bold text-lg">Google 表單已綁定</span>
+                <span class="text-gray-400 text-xs">系統正在自動同步報名名單</span>
               </div>
-              <div class="flex flex-col items-center">
-                <label class="text-sm font-bold text-gray-800 block mb-2">必填項</label>
-                <ElSwitch v-model="q.required" />
-              </div>
-              <ElButton type="danger" plain size="small" @click="removeQuestion(index)" class="self-start mt-8">移除此題</ElButton>
             </div>
+            <div class="flex-1 max-w-xl px-4">
+              <ElInput v-model="formUrl" readonly size="default" class="custom-dark-input">
+                <template #prefix><span class="text-gray-600">🔗</span></template>
+              </ElInput>
+            </div>
+            <div class="flex gap-2">
+              <ElButton type="primary" plain @click="handleCopy">複製連結</ElButton>
+              <ElButton type="warning" plain @click="isCreatedOrBound = false">編輯</ElButton>
+              <ElButton type="danger" plain @click="handleDeleteUrl">移除綁定</ElButton>
+            </div>
+          </div>
+        </ElCard>
+      </div>
+
+      <!-- B. 配置器區塊 (未產製/編輯模式時顯示) -->
+      <div v-if="!isCreatedOrBound" class="space-y-6 animate-fade-in">
+        <div class="flex items-center justify-between px-2">
+           <div class="flex flex-col">
+              <h3 class="text-xl font-bold text-gray-800">產製 Google 表單</h3>
+              <p class="text-sm text-gray-500">設定完畢後點擊下方按鈕，系統將自動在雲端建立表單</p>
+           </div>
+           <div class="flex items-center gap-2">
+              <span class="text-red-500 text-sm font-bold animate-pulse">* 請先產製或綁定問卷</span>
+           </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+          <!-- 左側：基礎設定 -->
+          <div class="lg:col-span-4 space-y-6">
+            <ElCard shadow="never" class="!rounded-2xl border-gray-200">
+               <template #header><span class="font-bold">1. 表單資訊</span></template>
+               <ElForm label-position="top">
+                  <ElFormItem label="表單主標題"><ElInput v-model="config.title" /></ElFormItem>
+                  <ElFormItem label="介紹說明"><ElInput v-model="config.description" type="textarea" :rows="3" /></ElFormItem>
+               </ElForm>
+            </ElCard>
             
-            <!-- 選項管理 -->
-            <div v-if="hasOptions(q.type)" class="mt-6 pl-5 border-l-4 border-blue-500 bg-blue-50/30 p-5 rounded-r-lg space-y-3">
-               <p class="text-xs font-bold text-blue-700 mb-2 flex items-center gap-1">
-                  <svg viewBox="0 0 24 24" width="14" height="14"><path fill="currentColor" d="M7,15L12,10L17,15H7Z" /></svg>
-                  選項配置（請輸入每個答案選項）：
-               </p>
-               <div v-for="(_, oIdx) in q.options" :key="oIdx" class="flex gap-2">
-                  <ElInput v-model="q.options[oIdx]" size="small" placeholder="選項文字，例如：Google 廣告" />
-                  <ElButton type="danger" link size="small" @click="q.options.splice(oIdx, 1)">x</ElButton>
+            <ElCard shadow="never" class="!rounded-2xl border-gray-200">
+               <template #header><span class="font-bold">2. 基本欄位勾選</span></template>
+               <ElCheckboxGroup v-model="config.standardFields" class="grid grid-cols-1 gap-2">
+                  <ElCheckbox v-for="f in fieldOptions" :key="f.value" :label="f.label" :value="f.value" :disabled="f.disabled" border class="!mr-0 w-full" />
+               </ElCheckboxGroup>
+            </ElCard>
+          </div>
+
+          <!-- 右側：自訂問項 -->
+          <div class="lg:col-span-8">
+            <ElCard shadow="never" class="!rounded-2xl border-gray-200 min-h-[500px]">
+               <template #header>
+                  <div class="flex justify-between items-center">
+                    <span class="font-bold">3. 自訂問題區</span>
+                    <ElButton type="primary" size="small" @click="addQuestion">+ 新增題目</ElButton>
+                  </div>
+               </template>
+               
+               <div class="space-y-4">
+                  <div v-for="(q, index) in config.customQuestions" :key="index" class="p-6 border-2 border-gray-100 rounded-xl bg-white relative hover:border-blue-300 transition-colors">
+                    <div class="flex gap-4 items-start">
+                      <div class="flex-1"><ElInput v-model="q.label" placeholder="題目標題..." /></div>
+                      <div class="w-40"><ElSelect v-model="q.type"><ElOption v-for="o in typeOptions" :key="o.value" :label="o.label" :value="o.value" /></ElSelect></div>
+                      <div class="flex items-center gap-2 pt-1 font-medium text-xs"><span class="text-gray-500">必填</span><ElSwitch v-model="q.required" size="small" /></div>
+                      <ElButton type="danger" link @click="config.customQuestions.splice(index,1)">移除</ElButton>
+                    </div>
+                    
+                    <div v-if="hasOptions(q.type)" class="mt-4 pl-4 border-l-2 border-blue-200 space-y-2">
+                       <div v-for="(_, oi) in q.options" :key="oi" class="flex gap-2">
+                          <ElInput v-model="q.options[oi]" size="small" placeholder="選項文字..." />
+                          <ElButton type="danger" link @click="q.options.splice(oi,1)">x</ElButton>
+                       </div>
+                       <ElButton type="primary" link size="small" @click="q.options.push('')">+ 增加選項</ElButton>
+                    </div>
+                  </div>
+                  <div v-if="config.customQuestions.length === 0" class="flex flex-col items-center justify-center py-20 text-gray-400">
+                    <svg viewBox="0 0 24 24" width="48" height="48" class="mb-2 opacity-20"><path fill="currentColor" d="M19,3H5C3.89,3 3,3.89 3,5V19C3,20.11 3.89,21 5,21H19C20.11,21 21,20.11 21,19V5C21,3.89 20.11,3 19,3M19,19H5V5H19V19M11,7H13V11H17V13H13V17H11V13H7V11H11V7Z" /></svg>
+                    <span>尚未增加任何自訂問項</span>
+                  </div>
                </div>
-               <ElButton type="primary" size="small" plain class="mt-2" @click="addSubOption(index)">+ 新增一個子選項</ElButton>
+            </ElCard>
+            
+            <div class="mt-8">
+              <ElButton type="primary" class="w-full !h-16 !rounded-2xl text-xl font-bold shadow-xl" :loading="loading" @click="handleCreateForm">
+                 🚀 同步雲端：立即產製 Google 表單
+              </ElButton>
             </div>
+          </div>
+        </div>
+      </div>
 
-            <div v-else class="mt-4 p-4 bg-gray-50 rounded-lg border border-gray-200">
-               <span class="text-xs text-gray-600 font-medium italic">此類型（{{ typeOptions.find(t=>t.value===q.type)?.label }}）為開放式填答，產製時會自動對接 Google 表單元件。</span>
+      <!-- C. 下層部分: 報名名單 (只要開啟報名表就顯示，若無名單則空置) -->
+      <div v-if="isDisplay" class="animate-fade-in pt-4">
+        <ElCard shadow="never" class="!rounded-2xl border-gray-200">
+          <template #header>
+            <div class="flex justify-between items-center">
+              <span class="font-bold text-gray-800 text-lg">已填寫名單</span>
+              <div class="flex items-center gap-4 text-sm">
+                 <span v-if="props.eventData.is_approve" class="bg-orange-100 text-orange-600 px-3 py-1 rounded-full font-bold">⚠️ 此活動需經審核</span>
+                 <span class="text-gray-500 font-medium">目前共 {{ displayList.length }} 筆</span>
+              </div>
             </div>
-          </div>
-          
-          <ElButton type="primary" class="w-full h-14 !rounded-xl !bg-blue-600 !border-blue-600 !text-white hover:!bg-blue-700 active:!bg-blue-800 shadow-md transition-all" @click="addQuestion">
-            <span class="flex items-center justify-center gap-2 font-medium text-sm">
-               <svg viewBox="0 0 24 24" width="18" height="18"><path fill="currentColor" d="M19,13H13V19H11V13H5V11H11V5H13V11H19V13Z" /></svg>
-               增加一份新的自訂問卷題目
-            </span>
-          </ElButton>
-        </div>
-      </ElCard>
-
-      <div class="text-center py-10">
-        <ElButton type="primary" size="large" class="!px-24 !rounded-2xl shadow-xl !h-16 font-bold text-xl hover:scale-[1.02] transition-transform" :loading="loading" @click="handleCreateForm">
-          🚀 發送至雲端並生成 Google 表單
-        </ElButton>
+          </template>
+          <ElTable :data="displayList" stripe border class="w-full" empty-text="目前尚無報名資料">
+            <ElTableColumn prop="name" label="姓名" width="150"><template #default="{row}"><span class="font-bold text-blue-600">{{ row.name }}</span></template></ElTableColumn>
+            <ElTableColumn prop="company" label="公司單位" min-width="200" />
+            <ElTableColumn prop="mobile" label="行動電話" width="180" />
+            <ElTableColumn v-if="props.eventData.is_approve" label="審核狀態" width="120">
+               <template #default="{row}">
+                 <span :class="row.status === 1 ? 'text-green-600' : 'text-gray-400'">{{ row.status === 1 ? '已通過' : '待審核' }}</span>
+               </template>
+            </ElTableColumn>
+          </ElTable>
+        </ElCard>
       </div>
+
     </div>
-
-    <!-- 成功預覽區 -->
-    <div v-else class="space-y-6 animate-fade-in p-2">
-      <div class="flex justify-between items-center bg-gray-900 p-6 rounded-2xl shadow-lg border-l-8 border-emerald-500">
-        <div class="flex items-center gap-5">
-          <div class="w-14 h-14 bg-emerald-500/20 text-emerald-400 rounded-2xl flex items-center justify-center border border-emerald-500/30">
-            <svg viewBox="0 0 24 24" width="32" height="32"><path fill="currentColor" d="M21,7L9,19L3.5,13.5L4.91,12.09L9,16.17L19.59,5.59L21,7Z" /></svg>
-          </div>
-          <div>
-            <h3 class="font-bold text-xl text-white">Google 表單已成功生成！</h3>
-            <p class="text-sm text-gray-300 font-medium">所有回覆數據現在已與此專案後端同步連結</p>
-          </div>
-        </div>
-        <div class="flex gap-3">
-          <ElButton bg type="info" @click="isCreated = false" class="!rounded-lg !px-6 !h-11">重新設定</ElButton>
-          <ElButton type="success" @click="openExternalLink(editUrl || formUrl)" class="!rounded-lg !px-6 !h-11 shadow-md shadow-emerald-500/20">
-             <span class="flex items-center gap-2 font-bold">
-                <svg viewBox="0 0 24 24" width="18" height="18"><path fill="currentColor" d="M14.06,9L15,9.94L5.92,19H5V18.08L14.06,9M17.66,3C17.41,3 17.15,3.1 16.96,3.29L15.13,5.12L18.88,8.87L20.71,7.04C21.1,6.65 21.1,6 20.71,5.63L18.37,3.29C18.17,3.09 17.92,3 17.66,3M14.06,6.19L3,17.25V21H6.75L17.81,9.94L14.06,6.19Z" /></svg>
-                開啟編輯後台
-             </span>
-          </ElButton>
-        </div>
-      </div>
-
-      <div class="h-[800px] bg-white rounded-2xl overflow-hidden border-4 border-gray-100 shadow-2xl relative">
-         <iframe :src="formUrl" width="100%" height="100%" frameborder="0">載入中...</iframe>
-      </div>
-    </div>
-
   </div>
 </template>
 
 <style scoped>
-.registration-form-config :deep(.el-checkbox.is-bordered.is-checked) {
-  border-color: #3b82f6;
-  background-color: #eff6ff;
-  border-width: 2px;
+.custom-dark-input :deep(.el-input__wrapper) {
+  background-color: #1f2937;
+  border: 1px solid #374151;
+  box-shadow: none;
 }
-.registration-form-config :deep(.el-checkbox__label) {
-  color: #374151 !important;
-  font-weight: 600;
-}
-.title-input :deep(.el-input__wrapper) {
-  background-color: #f9fafb;
+.custom-dark-input :deep(.el-input__inner) {
+  color: #9ca3af;
 }
 .animate-fade-in {
-  animation: fadeIn 0.4s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+  animation: fadeIn 0.4s ease-out forwards;
 }
 @keyframes fadeIn {
-  from { opacity: 0; transform: translateY(20px); }
+  from { opacity: 0; transform: translateY(10px); }
   to { opacity: 1; transform: translateY(0); }
 }
 </style>
