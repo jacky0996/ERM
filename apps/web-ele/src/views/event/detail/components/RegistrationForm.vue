@@ -11,14 +11,9 @@ import {
   ElMessage,
   ElMessageBox,
   ElEmpty,
-  ElTable,
-  ElTableColumn,
   ElSwitch,
   ElSelect,
   ElOption,
-  ElDialog,
-  ElDescriptions,
-  ElDescriptionsItem,
 } from 'element-plus';
 import { requestClient } from '#/api/request';
 
@@ -35,7 +30,6 @@ const isDisplay = ref(true);
 const isCreatedOrBound = ref(false);
 const formUrl = ref('');
 const formId = ref<string | number>(''); // 儲存來自 getDisplayList 的表單 ID
-const displayList = ref<any[]>([]);
 
 // --- 問卷配置器狀態 (恢復) ---
 const config = reactive({
@@ -104,36 +98,9 @@ async function checkDisplayAndLoad() {
       formUrl.value = details.form_url || '';
       formId.value = details.id || '';
       isCreatedOrBound.value = true;
-
-      // 解析並顯示名單 (已經從後端讀取回來的 responses)
-      if (details.responses && Array.isArray(details.responses)) {
-        displayList.value = details.responses.map((res: any) => {
-          const rowData: any = {
-            _responseId: res.google_response_id,
-            _createTime: res.submitted_at,
-            _rawAnswers: res.answers || [],
-            status: res.status ?? 0 // 預設 0: 待審核
-          };
-          
-          if (res.answers && Array.isArray(res.answers)) {
-            res.answers.forEach((ans: any) => {
-               const title = ans.title || '';
-               if (title.includes('姓名')) rowData.name = ans.answer;
-               else if (title.includes('電話') || title.includes('手機')) rowData.mobile = ans.answer;
-               else if (title.includes('公司')) rowData.company = ans.answer;
-               else if (title.includes('郵件') || title.toLowerCase().includes('email')) rowData.email = ans.answer;
-               else rowData[title] = ans.answer;
-            });
-          }
-          return rowData;
-        });
-      } else {
-        displayList.value = [];
-      }
     } else {
       isCreatedOrBound.value = false;
       formId.value = '';
-      displayList.value = [];
     }
   } catch (error) {
     console.error('getDisplayList Timeout or Failed:', error);
@@ -236,28 +203,6 @@ async function handleDeleteUrl() {
   }
 }
 
-const dialogVisible = ref(false);
-const currentResponse = ref<any>(null);
-
-function handleViewResponse(row: any) {
-  currentResponse.value = row;
-  dialogVisible.value = true;
-}
-
-function formatDate(dateStr: string) {
-  if (!dateStr) return '(未知)';
-  const date = new Date(dateStr);
-  if (isNaN(date.getTime())) return dateStr;
-  
-  const y = date.getFullYear();
-  const m = String(date.getMonth() + 1).padStart(2, '0');
-  const d = String(date.getDate()).padStart(2, '0');
-  const h = String(date.getHours()).padStart(2, '0');
-  const min = String(date.getMinutes()).padStart(2, '0');
-  const s = String(date.getSeconds()).padStart(2, '0');
-  
-  return `${y}-${m}-${d} ${h}:${min}:${s}`;
-}
 
 function handleCopy() {
   navigator.clipboard.writeText(formUrl.value).then(() => ElMessage.success('已複製連結'));
@@ -408,79 +353,7 @@ function addQuestion() {
         </div>
       </div>
 
-      <!-- C. 下層部分: 報名名單 (只要開啟報名表就顯示，若無名單則空置) -->
-      <div v-if="isDisplay" class="animate-fade-in pt-4">
-        <ElCard shadow="never" class="!rounded-2xl border-gray-200">
-          <template #header>
-            <div class="flex justify-between items-center">
-              <span class="font-bold text-gray-800 text-lg">已填寫名單</span>
-              <div class="flex items-center gap-4 text-sm">
-                 <span v-if="props.eventData.is_approve" class="bg-orange-100 text-orange-600 px-3 py-1 rounded-full font-bold">⚠️ 此活動需經審核</span>
-                 <span class="text-gray-500 font-medium">目前共 {{ displayList.length }} 筆</span>
-              </div>
-            </div>
-          </template>
-          <ElTable :data="displayList" stripe border class="w-full" empty-text="目前尚無報名資料">
-            <ElTableColumn prop="name" label="姓名" width="120">
-              <template #default="{row}"><span class="font-bold text-blue-600">{{ row.name }}</span></template>
-            </ElTableColumn>
-            <ElTableColumn prop="company" label="公司單位" min-width="150" />
-            <ElTableColumn prop="mobile" label="行動電話" width="130" />
-            <ElTableColumn prop="email" label="電子郵件" min-width="180" />
-            <ElTableColumn label="操作" width="100" align="center" fixed="right">
-               <template #default="{row}">
-                 <ElButton type="primary" link @click="handleViewResponse(row)">查看回復</ElButton>
-               </template>
-            </ElTableColumn>
-          </ElTable>
-        </ElCard>
-      </div>
     </div>
-
-    <!-- 回覆詳情彈窗 -->
-    <ElDialog v-model="dialogVisible" title="詳細填寫內容" width="650px" destroy-on-close class="!rounded-2xl">
-      <div v-if="currentResponse" class="flex flex-col">
-        <!-- 頂部核心資訊摘要 -->
-        <div class="grid grid-cols-2 gap-3 mb-6 bg-gray-50 p-4 rounded-xl border border-gray-100">
-           <div class="flex flex-col">
-              <span class="text-[10px] text-gray-400 font-bold uppercase tracking-wider">姓名</span>
-              <span class="text-blue-600 font-bold">{{ currentResponse.name || '---' }}</span>
-           </div>
-           <div class="flex flex-col">
-              <span class="text-[10px] text-gray-400 font-bold uppercase tracking-wider">電子郵件</span>
-              <span class="text-gray-700 font-medium break-all">{{ currentResponse.email || '---' }}</span>
-           </div>
-           <div class="flex flex-col">
-              <span class="text-[10px] text-gray-400 font-bold uppercase tracking-wider">公司單位</span>
-              <span class="text-gray-700 font-medium">{{ currentResponse.company || '---' }}</span>
-           </div>
-           <div class="flex flex-col">
-              <span class="text-[10px] text-gray-400 font-bold uppercase tracking-wider">行動電話</span>
-              <span class="text-gray-700 font-medium">{{ currentResponse.mobile || '---' }}</span>
-           </div>
-        </div>
-
-        <!-- 滾動式詳細問答區 -->
-        <div class="px-1">
-          <h4 class="text-sm font-bold text-gray-500 mb-3 flex items-center gap-2">
-            <div class="w-1 h-4 bg-emerald-500 rounded-full"></div> 完整填寫內容
-          </h4>
-          <div class="max-h-[400px] overflow-y-auto pr-2 custom-scrollbar border border-gray-100 rounded-xl">
-            <ElDescriptions :column="1" border>
-              <ElDescriptionsItem v-for="(ans, i) in currentResponse._rawAnswers" :key="i" :label="ans.title">
-                <span class="font-medium text-gray-700 whitespace-pre-wrap">{{ ans.answer || '(未填寫)' }}</span>
-              </ElDescriptionsItem>
-            </ElDescriptions>
-          </div>
-        </div>
-
-        <!-- 底部元數據 -->
-        <div class="text-[10px] text-gray-300 mt-6 flex justify-between px-2 pt-4 border-t border-gray-50">
-          <span>Response ID: {{ currentResponse._responseId }}</span>
-          <span>提交時間: {{ formatDate(currentResponse._createTime) }}</span>
-        </div>
-      </div>
-    </ElDialog>
   </div>
 </template>
 
