@@ -6,10 +6,11 @@ services:
     image: edm-image
     container_name: edm-web-ele
     ports:
-      - "80:80"  # 直接使用主機 80 Port 對應至容器內的 80 Port
+      - "82:80"  # 主機 82 Port 對應至容器內的 80 Port (80 保留給中台系統)
     restart: always
     networks:
       - edm-network
+      - backend-net
     # --- [資安隔離] 使用域名通訊，不再需要 hardcoded IP 別名 ---
     # 健康檢查 (改用檔案檢查，避免因為網路/域名問題誤判)
     healthcheck:
@@ -21,3 +22,6 @@ services:
 networks:
   edm-network:
     driver: bridge
+  backend-net:
+    external: true
+    name: edm_backend_backend
