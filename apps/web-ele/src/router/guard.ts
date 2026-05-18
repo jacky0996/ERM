@@ -7,6 +7,7 @@ import { startProgress, stopProgress } from '@vben/utils';
 
 import { accessRoutes, coreRouteNames } from '#/router/routes';
 import { useAuthStore } from '#/store';
+import { isTokenExpired } from '#/utils/jwt';
 
 import { generateAccess } from './access';
 
@@ -78,16 +79,25 @@ function setupAccessGuard(router: Router) {
       }
     }
 
-    // accessToken 檢查
-    if (!accessStore.accessToken) {
+    // accessToken 檢查 — 缺 token 或 token 已過期都視為未登入
+    const tokenExpired = isTokenExpired(accessStore.accessToken);
+    if (!accessStore.accessToken || tokenExpired) {
       // 明確宣告忽略權限存取權限，則可以存取
       if (to.meta.ignoreAccess) {
         return true;
       }
 
-      // [核心修正] 如果沒有 Token，則直接導向 HWS Login 頁面
+      // token 過期但本地仍有殘留 → 清掉 store + localStorage,避免下一次又誤用
+      if (tokenExpired && accessStore.accessToken) {
+        console.warn('[Guard] Access token 已過期,清除並導回 SSO');
+        accessStore.setAccessToken(null);
+        localStorage.removeItem('ACCESS_TOKEN_USER_INFO');
+      }
+
+      // 如果沒有 Token,直接導向 HWS Login 頁面
       const hwsUrl = import.meta.env.VITE_HWS_URL;
-      window.location.href = `${hwsUrl}login`;
+      const redirect = encodeURIComponent(window.location.href);
+      window.location.href = `${hwsUrl}login?redirect=${redirect}`;
       return false;
     }
 

@@ -49,18 +49,27 @@ async function bootstrap(namespace: string) {
   // 配置 pinia-tore
   await initStores(app, { namespace });
 
-  // SSO 閒置檢查定時器 (30 分鐘未活動則自動登出)
+  // SSO 閒置 + JWT 過期檢查定時器
   const storeModule = await import('#/store');
   const authStore = storeModule.useAuthStore();
+  const { useAccessStore } = await import('@vben/stores');
+  const { isTokenExpired } = await import('#/utils/jwt');
+
   setInterval(() => {
+    // 1. JWT 主動過期偵測 — 即使使用者停在頁面不動,token 一過期就跳走
+    const accessStore = useAccessStore();
+    if (accessStore.accessToken && isTokenExpired(accessStore.accessToken)) {
+      console.warn('[Idle Check] Access token 已過期,自動登出');
+      authStore.logout();
+      return;
+    }
+
+    // 2. 閒置 30 分鐘登出
     const lastActivity = Number.parseInt(
       localStorage.getItem('edm_last_activity') || '0',
     );
     if (!lastActivity) return;
-    const now = Date.now();
-    const idleTimeout = 30 * 60 * 1000; // 30 分鐘
-
-    if (now - lastActivity > idleTimeout) {
+    if (Date.now() - lastActivity > 30 * 60 * 1000) {
       authStore.logout();
     }
   }, 60_000); // 每分鐘檢查一次
